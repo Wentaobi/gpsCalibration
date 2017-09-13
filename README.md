@@ -1,7 +1,8 @@
 # iMorpheus.ai - high availability sub-meter precise GPS
 Through algorithm fusion of multiple data sources from different sensors such as lidar, radar, camera, gps, imu and point cloud, iMorpheus.ai brings about an high availability precision GPS measurement to outdoor robotics developer. iMorpheus integrate a number of advanced algorithm such as slam, kalman filter, ICP, feature selection and Gaussian Process. 
 #### We believe precise GPS signal should obtained by computing from cloud rather than measure the satellite, and soly software and cloud can solve the problem rather than expensive hardware. So that we committed into only software to solve the problem. 
-
+![image](https://github.com/iMorpheusAI/gpsCalibration/raw/master/demo/demo1.png)
+![image](https://github.com/iMorpheusAI/gpsCalibration/raw/master/demo/demo2.png)
 ## Copyrights
 ![License](https://img.shields.io/badge/License-Apache2.0-blue.svg)
 
@@ -11,38 +12,29 @@ The alpha version is a software package operate under off-line mode and using po
 ## Installation Environment
 
 ### 1. Operating System
-Prefer Ubuntu 14.04, Trusty
+Ubuntu 14.04, 16.04
 
 ### 2. Robot Operating System - ROS
-#### 2.1 About ROS
 ROS provides libraries and tools to help software developers create robot applications. It provides hardware abstraction, device drivers, libraries, visualizers, message-passing, package management, and more. ROS is licensed under an open source, BSD license.
-#### 2.2 Install ROS from
-http://wiki.ros.org/cn/indigo/Installation/Ubuntu
-#### 2.3 Learn more about ROS from
-http://wiki.ros.org/ROS/Tutorials
-#### 2.4 iMorpheus Perferred Version
-ROS Indigo
+##### [Learn More](http://wiki.ros.org/ROS/Tutorials)
 
 ### 3. Point Cloud Library - PCL
-#### 3.1 About PCL
 PCL is a large scale, open source project for 2D/3D image and point cloud processing.
-#### 3.2 Install PCL from
-http://pointclouds.org/downloads/
-#### 3.3 Learn more about PCL from
-http://pointclouds.org/documentation/
-#### 3.4 iMorpheus Perferred Version
-pcl-1.7.0
+##### [Learn More](http://pointclouds.org/documentation/)
 
-### 4.EIGEN
-#### 4.1 About EIGEN
+### 4. EIGEN
 Eigen is a C++ template library for linear algebra: matrices, vectors, numerical solvers, and related algorithms.
-#### 4.2 Install EIGEN from
-http://eigen.tuxfamily.org/index.php?title=Main_Page
-#### 4.3 Learn more about EIGEN from
-http://eigen.tuxfamily.org/index.php?title=Main_Page
-#### 4.4 iMorpheus Perferred Version
-Eigen-3.3
+##### [Learn More](http://eigen.tuxfamily.org/index.php?title=Main_Page)
 
+### 5. Quick Installation
+Two kinds of scripts are provided for users. 
+###### Basic installation-Basic version (Recommended for general users.) 
+###### Professional installation-Professional version (Recommended for developers.) 
+You can download this repertory and type commands:
+```shell
+cd install
+sudo ./install.sh-(selected by your ubuntu version and demand) 
+```
 ## Module description
 ### 1. Modules
 gpsCalibration has three modules include GPS, LOAM and Calibration.
@@ -75,8 +67,8 @@ The final output is calibrated GPS track. We only work on 2D GPS tracks in this 
   sensor_msgs/PointCloud2. and GPS coordinates matched with your run trail although 
   GPS is not accurate and not continuous in time.
   If you don’t have lidar or GPS data, don’t worry, we have some data in advance for you to have a try.*
-* [small size demo data](http://www.imorpheus.ai/download/dataForDemo/smallSizeDemoData)
-* [large size demo data](http://www.imorpheus.ai/download/dataForDemo/largeSizeDemoData)
+##### small size demo data -> [[download-191MB]](http://www.imorpheus.ai/download/dataForDemo/smallSizeDemoData)
+##### large size demo data -> [[download-2.6GB]](http://www.imorpheus.ai/download/dataForDemo/largeSizeDemoData)
   
 2.*Open the globalConfig.py in directory "iMorpheusAI/"
   set needed file directory correctly.*
@@ -112,13 +104,12 @@ You can find Google Earth here: https://developers.google.com/kml/?hl=en-US.*
 
 ### 3. Example
 #### 3.1 data download
-* [small size demo data](http://www.imorpheus.ai/download/dataForDemo/smallSizeDemoData)
-* [large size demo data](http://www.imorpheus.ai/download/dataForDemo/largeSizeDemoData)
+##### small size demo data -> [[download-191MB]](http://www.imorpheus.ai/download/dataForDemo/smallSizeDemoData)
+##### large size demo data -> [[download-2.6GB]](http://www.imorpheus.ai/download/dataForDemo/largeSizeDemoData)
 
 #### 3.2 demo results
-![image](https://github.com/iMorpheusAI/gpsCalibration/raw/master/demo/demo1.png)
-![image](https://github.com/iMorpheusAI/gpsCalibration/raw/master/demo/demo2.png)
-##### [See More](http://www.imorpheus.ai/demo/)
 ##### [Results Download](http://www.imorpheus.ai/download/dataForDemo/largeSizeDemoResult)
+##### [See More](http://www.imorpheus.ai/demo/)
+
 ## Questions
   You can ask any question [here](https://github.com/iMorpheusAI/gpsCalibration/issues) or send us [emails](product@imorpheus.ai).
