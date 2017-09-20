@@ -55,7 +55,6 @@ void getGPS(vector<COORDXYZTW> slamTrack,vector<COORDXYZTW> &slamWithGPS,vector<
 
 void merge(vector<COORDXYZTW> tmp)
 {
-    cout << "merge" << endl;
     if(ENUCoorVector.size() == 0)
     {
         for(int index = 0; index < tmp.size(); index ++)
@@ -108,14 +107,11 @@ void merge(vector<COORDXYZTW> tmp)
             ENUCoorVector.push_back(tmp[indexTmp]);
         }
     }
-    cout << "merge ok " <<endl;
-    cout << "ENUCoorVector.size() = " << ENUCoorVector.size() << endl;
 }
 
 
 void GPSWithWeightHandle(const gpsCalibration::IMTrackPtr& GPSWithWeight)
 {
-    cout << "get GPS" << endl;
     for(int index = 0; index < GPSWithWeight->track.size(); index ++)
     {
         COORDXYZTW tmp;
@@ -128,13 +124,10 @@ void GPSWithWeightHandle(const gpsCalibration::IMTrackPtr& GPSWithWeight)
     }
 }
 
-
 void slamTrackHandle(const gpsCalibration::IMTrackPtr& slamTrack)
 {
     if(slamTrack->track_flag == 1)
     {
-        cout << " get slamTrack " <<endl;
-        cout << "slamTrack->track.size() = " << slamTrack->track.size() << endl;
         if(slamTrack->track.size() == 0)
         {
             flag = 0;
@@ -195,9 +188,6 @@ int main(int argc,char **argv)
                     vector<COORDXYZTW> slamTrack = slamTrackVector.front();
                     slamTrackVector.pop();
                     getGPS(slamTrack,slamWithGPS,GPSWithSlam,weight);
-                    cout << "slamWithGPS.size() = " << slamWithGPS.size() << endl;
-                    cout << "GPSWithSlam.size() = " << GPSWithSlam.size() << endl;
-                    cout << "weight.size() = " << weight.size() << endl;
                     trackCalibration tc(slamWithGPS,GPSWithSlam,weight);
                     tc.doICP();
                     tc.doCalibration(ENUCoor);
@@ -206,16 +196,18 @@ int main(int argc,char **argv)
             }
         }
 
-
+        cout << "==================== Create original GPS KML ====================" << endl;
         gpsProcess.ENUToGPS(gps,WGSBL,altitude,segmentColor);
         gpsProcess.createKML(originalKMLFileName,WGSBL,altitude,0,segmentColor);
         WGSBL.clear();
         altitude.clear();
         segmentColor.clear();
 
+        cout << "==================== Create calibrated GPS KML ====================" << endl;
         gpsProcess.ENUToGPS(ENUCoorVector,WGSBL,altitude,segmentColor);
         gpsProcess.createKML(improveKMLFileName,WGSBL,altitude,1,segmentColor);
-        
+
+        cout << "==================== END ====================" << endl;
     }
     return 0;
 }
