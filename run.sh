@@ -1,7 +1,6 @@
 #!/bin/bash
 
 <<!
-'''
     User Parameters:
     
     Input filenames:
@@ -17,14 +16,13 @@
 
     4. gps_improved_filename:
        imporved accurate GPS track type with KML format
-'''
 !
 bag_input_filename="./data/bag_list.txt"
 gps_input_filename="./data/original_gps_data.txt"
 gps_original_filename="./data/original_gps_file.kml"
 gps_improved_filename="./data/calibration_gps_file.kml"
 
-'''
+<<!
     Project parameters:
     1. total_long_distance:
         length of long distance lidar SLAM
@@ -36,7 +34,7 @@ gps_improved_filename="./data/calibration_gps_file.kml"
 
     3. overlap_distance:
         length of overlapped short distance lidar SLAM
-'''
+!
 total_long_distance=1000
 total_short_distance=300
 overlap_distance=100
