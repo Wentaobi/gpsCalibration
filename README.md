@@ -64,7 +64,7 @@ The final output is calibrated GPS track. We only work on 2D GPS tracks in this 
 #### 1.4 Flowchart
 ![image](https://github.com/iMorpheusAI/gpsCalibration/raw/master/demo/flowchart.jpg)
 ## How to compile and run the project
-1.* Make sure that you have the message bag. it includes follow message types
+1.*Make sure that you have the message bag. it includes follow message types
   sensor_msgs/PointCloud2. and GPS coordinates matched with your run trail although 
   GPS is not accurate and not continuous in time.
   If you don’t have lidar or GPS data, don’t worry, we have some data in advance for you to have a try.*
@@ -81,7 +81,7 @@ $ miniDemo/
    ├── bag_0
    └── original_gps_data.txt
 ```
-2.* Open the globalConfig.py in directory "gpsCalibration/" and set needed file directory correctly.*
+2.*Open the globalConfig.py in directory "gpsCalibration/" and set needed file directory correctly.*
 ```
     User Parameters:
     Input filenames:
@@ -102,7 +102,7 @@ $ miniDemo/
        imporved accurate GPS track type with KML format
        gps_improved_filename=  "./data/calibrated_gps_track.kml"
 ```
-3.* In directory gpsCalibration, run commands:*
+3.*In directory gpsCalibration, run commands:*
 ```
 $ catkin_make 
 $ source setup.sh
@@ -111,12 +111,12 @@ $ vi bag_list.txt
   modify the point cloud data bag path: /home/xxx/downloads/miniDemo/bag_0
 $ cp /home/xxx/downloads/miniDemo/original_gps_data.txt ./
 ```
-4.* Okay, you can run command:*
+4.*Okay, you can run command:*
 ```
 $ ./run.py
 ```
 
-5.* Finally, you get a global position system coordinates matched with your run trail. It is accurate and reliable!*
+5.*Finally, you get a global position system coordinates matched with your run trail. It is accurate and reliable!*
 
 ## About system input and output
 ### 1. Input
