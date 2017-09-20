@@ -1,0 +1,60 @@
+#!/bin/bash
+
+<<!
+'''
+    User Parameters:
+    
+    Input filenames:
+    1. bag_input_filename:
+       input point cloud bag file list
+
+    2. gps_input_filename:
+       original GPS data with type GPRMC
+
+    Output filenames:
+    3. gps_original_filename:
+       original GPS track type with KML format
+
+    4. gps_improved_filename:
+       imporved accurate GPS track type with KML format
+'''
+!
+bag_input_filename="./data/bag_list.txt"
+gps_input_filename="./data/original_gps_data.txt"
+gps_original_filename="./data/original_gps_file.kml"
+gps_improved_filename="./data/calibration_gps_file.kml"
+
+'''
+    Project parameters:
+    1. total_long_distance:
+        length of long distance lidar SLAM
+        (600m-1000m, recommended)
+
+    2. total_short_distance:
+        length of short distance lidar SLAM
+        (200m-300m, recommended)
+
+    3. overlap_distance:
+        length of overlapped short distance lidar SLAM
+'''
+total_long_distance=1000
+total_short_distance=300
+overlap_distance=100
+
+<<!
+    Default Parameters:
+    1. ctm:
+       WGS-84 coordinate to ENU local coordinates method:
+       UTM, Gaussian- UTM recommended
+
+    2. gdt:
+       GPS divide_type refers to longitude:
+       3, 6- 3 recommended
+!
+ctm="UTM"
+gdt="3"
+
+#command
+roslaunch gpsCalibration gpsCalibration.launch bag_input_filename:=${bag_input_filename} total_long_distance:=${total_long_distance} total_short_distance:=${total_short_distance} \
+gps_input_filename:=${gps_input_filename} ctm:=${ctm} gdt:=${gdt} overlap_distance:=${overlap_distance} gps_original_filename:=${gps_original_filename} \
+gps_improved_filename:=${gps_improved_filename}

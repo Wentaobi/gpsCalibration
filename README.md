@@ -81,7 +81,7 @@ $ miniDemo/
    ├── bag_0
    └── original_gps_data.txt
 ```
-2.*Open the globalConfig.py in directory "gpsCalibration/" and set needed file directory correctly.*
+2.*Open the run.sh in directory "gpsCalibration/" and set needed file directory correctly.*
 ```
     User Parameters:
     Input filenames:
@@ -113,7 +113,7 @@ $ cp /home/xxx/downloads/miniDemo/original_gps_data.txt ./
 ```
 4.*Okay, you can run command:*
 ```
-$ ./run.py
+$ ./run.sh
 ```
 
 5.*Finally, you get a global position system coordinates matched with your run trail. It is accurate and reliable!*
