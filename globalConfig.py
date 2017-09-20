@@ -6,7 +6,7 @@ import signal
 from subprocess import Popen
 
 '''
-    User Profiles
+    User Parameters:
     1. bag_input_filename:
        input point cloud bag file list
 
@@ -22,10 +22,10 @@ from subprocess import Popen
 bag_input_filename= "./data/bag_list.txt"
 gps_input_filename= "./data/original_gps_data.txt"
 gps_original_filename=  "./data/original_gps_track.kml"
-gps_improved_filename=  "./data/improved_gps_track.kml"
+gps_improved_filename=  "./data/calibrated_gps_track.kml"
 
 '''
-    Project Profiles:
+    Project Parameters:
     1. ctm:
        WGS-84 coordinate to ENU local coordinates method:
        UTM, Gaussian
@@ -93,8 +93,8 @@ gpsProcessedFinal= "./data/merge_results_file"
     4. number of iteration in track registration        
 '''
 totalLongDistance= 1000.0
-totalShortDistance= 300.0
-opDistance= 100.0
+totalShortDistance= 200.0
+opDistance= 50.0
 maxIterNum= 5
 
 pidList=[0]*11
