@@ -26,16 +26,17 @@ Eigen is a C++ template library for linear algebra: matrices, vectors, numerical
 ##### [Learn More](http://eigen.tuxfamily.org/index.php?title=Main_Page)
 
 ## Quick Installation
-Under 'install' directory of the project, We provide install scripts for beginners and pros. The scripts include installing ROS, PCL and EIGEN. 
-a. Basic version (Recommended for general users.) - one hour installation time.
-b. Professional version (Recommended for developers.) 
+Under 'install' directory of the project, We provide install scripts for beginners and pros. The scripts include installing ROS, PCL and EIGEN. <br/>
+a) Basic version (Recommended for general users.) - one hour installation time.<br/>
+b) Professional version (Recommended for developers.) 
 
 - First download this repertory from github to your local system. 
 - For ubuntu 14.04 basic version install, type commands:
-```shell
-cd install
-sudo ./install_u1404_basic.sh 
 ```
+$ cd install
+$ sudo ./install_u1404_basic.sh 
+```
+
 ## Module description
 ### 1. Modules
 gpsCalibration has three modules include GPS, LOAM and Calibration.
@@ -63,30 +64,59 @@ The final output is calibrated GPS track. We only work on 2D GPS tracks in this 
 #### 1.4 Flowchart
 ![image](https://github.com/iMorpheusAI/gpsCalibration/raw/master/demo/flowchart.jpg)
 ## How to compile and run the project
-1.*Make sure that you have the message bag. it includes follow message types
+1.* Make sure that you have the message bag. it includes follow message types
   sensor_msgs/PointCloud2. and GPS coordinates matched with your run trail although 
   GPS is not accurate and not continuous in time.
   If you don’t have lidar or GPS data, don’t worry, we have some data in advance for you to have a try.*
 ##### small size demo data -> [[download-191MB]](http://www.imorpheus.ai/download/dataForDemo/smallSizeDemoData)
 ##### large size demo data -> [[download-2.6GB]](http://www.imorpheus.ai/download/dataForDemo/largeSizeDemoData)
-  
-2.*Open the globalConfig.py in directory "iMorpheusAI/"
-  set needed file directory correctly.*
+Download compressed demo data and type commands to decompress: 
+```
+$ tar -zvxf small_size_demo_data.tar.gz
+$ tar -zvxf large_size_demo_data.tar.gz 
+```
+After decomproession of small_size_demo_data.tar.gz, you will see:
+```
+$ miniDemo/
+   ├── bag_0
+   └── original_gps_data.txt
+```
+2.* Open the globalConfig.py in directory "gpsCalibration/" and set needed file directory correctly.*
+```
+    User Parameters:
+    Input filenames:
+    1. bag_input_filename:
+       input point cloud bag file list
+       bag_input_filename= "./data/bag_list.txt"
 
-3.*In directory "iMorpheusAI", run command :*
-
+    2. gps_input_filename:
+       original GPS data with type GPRMC
+       gps_input_filename= "./data/original_gps_data.txt"
+       
+    Output filenames:
+    3. gps_original_filename:
+       original GPS track type with KML format
+       gps_original_filename=  "./data/original_gps_track.kml"
+       
+    4. gps_improved_filename:
+       imporved accurate GPS track type with KML format
+       gps_improved_filename=  "./data/calibrated_gps_track.kml"
+```
+3.* In directory gpsCalibration, run commands:*
 ```
 $ catkin_make 
 $ source setup.sh
-$ mkdir data
 $ cd data
-$ touch bag_list.txt
-  *add the point cloud data bag path*
+$ vi bag_list.txt
+  modify the point cloud data bag path: /home/xxx/downloads/miniDemo/bag_0
+$ cp /home/xxx/downloads/miniDemo/original_gps_data.txt ./
+```
+4.* Okay, you can run command:*
+```
+$ ./run.py
 ```
 
-4.*Okay, you can run ./run.py.*
-
-5.*Finally, you get a global position system coordinates matched with your run trail. It is accurate and reliable!*
+5.* Finally, you get a global position system coordinates matched with your run trail. It is accurate and reliable!*
 
 ## About system input and output
 ### 1. Input
@@ -103,14 +133,19 @@ If you want to see GPS track in Google Earth, you need to use kml.
 You can find Google Earth here: https://developers.google.com/kml/?hl=en-US.*
 
 ### 3. Example
-#### 3.1 data download
-##### small size demo data -> [[download-191MB]](http://www.imorpheus.ai/download/dataForDemo/smallSizeDemoData)
-##### large size demo data -> [[download-2.6GB]](http://www.imorpheus.ai/download/dataForDemo/largeSizeDemoData)
-
-#### 3.2 demo results
+  We show the calibrated results of large size demo data. 
+#### 3.1 demo results
 ![image](https://github.com/iMorpheusAI/gpsCalibration/raw/develop/demo/demo1.png)
 ![image](https://github.com/iMorpheusAI/gpsCalibration/raw/develop/demo/demo2.png)
 ##### [Results Download](http://www.imorpheus.ai/download/dataForDemo/largeSizeDemoResult)
+Download compressed demo results and type commands to decompress: 
+```
+$ tar -zvxf large_size_demo_result.tar.gz
+$ tree large_size_demo_result
+  ├── calibrated_gps_track.kml
+  └── original_gps_track.kml
+```
+Open these KML files in google earth, you can check your results.
 ##### [See More](http://www.imorpheus.ai/demo/)
 
 ## Questions
