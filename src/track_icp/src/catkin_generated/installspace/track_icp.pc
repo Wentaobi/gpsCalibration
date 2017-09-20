@@ -1,8 +1,0 @@
-prefix=/usr/local
-
-Name: track_icp
-Description: Description of track_icp
-Version: 0.0.0
-Cflags: 
-Libs: -L/usr/local/lib -ltrack_icp
-Requires: roscpp std_msgs
