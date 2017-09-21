@@ -3,11 +3,10 @@
 <arg name="total_long_distance"/>
 <arg name="total_short_distance"/>
 <arg name="overlap_distance"/>
-
 <arg name="gps_input_filename"/>
 <arg name="ctm"/>
 <arg name="gdt"/>
-
+<arg name="result_control"/>
 <arg name="gps_original_filename"/>
 <arg name="gps_improved_filename"/>
 
@@ -23,6 +22,6 @@ required="false" args="$(arg bag_input_filename) $(arg total_long_distance) $(ar
 args="$(arg gps_input_filename) $(arg ctm) $(arg gdt)" required="false"/>
 
 <node pkg="gpsCalibration" type="short_distance_track_process_node" name="short_distance_track_process_node" output="screen" 
-args="$(arg ctm) $(arg gdt) $(arg gps_original_filename) $(arg gps_improved_filename)" required="true"/>
+args="$(arg ctm) $(arg gdt) $(arg result_control) $(arg gps_original_filename) $(arg gps_improved_filename)" required="true"/>
 
 </launch>

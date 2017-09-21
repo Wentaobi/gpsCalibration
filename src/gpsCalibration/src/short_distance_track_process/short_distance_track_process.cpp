@@ -8,6 +8,8 @@
 #include "track_calibration.h"
 #include "gpsCalibration/IMTrack.h"
 #include "gpsCalibration/IMLocalXYZT.h"
+#include "gpsCalibration/IMMessage.h"
+#include "gpsCalibration/IMGPS.h"
 
 using namespace std;
 
@@ -159,8 +161,7 @@ int main(int argc,char **argv)
   
     string method = argv[1];
     int type = atoi(argv[2]);
-    string originalKMLFileName = argv[3];
-    string improveKMLFileName = argv[4];
+    int KMLControl = atoi(argv[3]);
 
     vector<pair<double,double> > WGSBL;
     vector<double> altitude;
@@ -171,6 +172,7 @@ int main(int argc,char **argv)
 
     ros::Subscriber subGPSWithWeight = nh.subscribe<>("gps_weight",1024,GPSWithWeightHandle);
     ros::Subscriber subSlamTrack = nh.subscribe<>("/slam_track",1024,slamTrackHandle);
+    ros::Publisher IMCalibratedGPS= nh.advertise<gpsCalibration::IMMessage> ("/imorpheus_gps", 2);
 
     signal(SIGINT,sigproc);
 
@@ -196,18 +198,39 @@ int main(int argc,char **argv)
             }
         }
 
-        cout << "==================== Create original GPS KML ====================" << endl;
-        gpsProcess.ENUToGPS(gps,WGSBL,altitude,segmentColor);
-        gpsProcess.createKML(originalKMLFileName,WGSBL,altitude,0,segmentColor);
-        WGSBL.clear();
-        altitude.clear();
-        segmentColor.clear();
+        if(1==KMLControl)
+        {
+            string originalKMLFileName= argv[4];
+            string improveKMLFileName= argv[5];
 
-        cout << "==================== Create calibrated GPS KML ====================" << endl;
-        gpsProcess.ENUToGPS(ENUCoorVector,WGSBL,altitude,segmentColor);
-        gpsProcess.createKML(improveKMLFileName,WGSBL,altitude,1,segmentColor);
+            cout << "==================== Create original GPS KML ====================" << endl;
+            gpsProcess.ENUToGPS(gps, WGSBL, altitude, segmentColor);
+            gpsProcess.createKML(originalKMLFileName, WGSBL, altitude, 0, segmentColor);
+            WGSBL.clear();
+            altitude.clear();
+            segmentColor.clear();
 
-        cout << "==================== END ====================" << endl;
+            cout << "==================== Create calibrated GPS KML ====================" << endl;
+            gpsProcess.ENUToGPS(ENUCoorVector, WGSBL, altitude, segmentColor);
+            gpsProcess.createKML(improveKMLFileName, WGSBL, altitude, 1, segmentColor);
+
+            cout << "==================== END ====================" << endl;
+        }
+        else if(2==KMLControl)
+        {
+            gpsCalibration::IMMessage msgForUser;
+            gpsCalibration::IMGPS msgTemp;
+
+            for(int i= 0; i< WGSBL.size(); i++) 
+            {
+                msgTemp.b= WGSBL[i].first;
+                msgTemp.l= WGSBL[i].second;
+                msgTemp.w= ENUCoorVector[i].w;
+                msgForUser.track.push_back(msgTemp);
+            }
+            cout << "==================== Start to publish calibrated gps ====================" << endl;
+            IMCalibratedGPS.publish(msgForUser);
+        }
     }
     return 0;
 }
