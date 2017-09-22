@@ -174,11 +174,11 @@ long totalMessageNumber(vector<string> bagList,vector<long> &messageNumber)
             readBag.close();
             messageNumber.push_back(messageNumPerBag);
         }
-        cout<<"total message is "<<totalNum<<endl;
+        cout<<"Total Message Num Is "<<totalNum<<endl;
     }
     catch(rosbag::BagIOException)
     {
-        cout<<"cannot find bag path,please check bag_list"<<endl;
+        cout<<"Sorry, Cannot find bag path, Please check bag_list"<<endl;
         timetodie = 1;
     }
     return totalNum;
@@ -435,7 +435,10 @@ int main(int argc, char **argv)
                 }
                 sleep(1);
                 slamTrack.track_flag = times;
-                slamTrackVector.push(slamTrack);
+                if(0 != slamTrack.track.size())
+                {
+                    slamTrackVector.push(slamTrack);
+                }
                 slamTrack.track.clear();
                 //system(commandKill.c_str());     // kill loam
 
@@ -448,6 +451,7 @@ int main(int argc, char **argv)
                 slamTrackPub.publish(slamTrackVector.front());
                 sleep(1);
                 slamTrackVector.pop();
+                if(slamTrackVector.empty()) break;
             }
             slamTrackPub.publish(slamTrack);
             sleep(2);
@@ -477,6 +481,6 @@ int main(int argc, char **argv)
     kill(child_pid,SIGKILL);
     cout<<"kill child pid"<<endl;
     */
-    cout << "finish" << endl;
+    cout << "SLAM Track Calculation Over" << endl;
     return 0;
 }

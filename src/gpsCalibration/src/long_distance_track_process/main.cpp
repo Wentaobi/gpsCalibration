@@ -18,7 +18,7 @@ gpsCalibration::IMTrack msgwithweight;
 void LongDisTrackPro::trackCalibrationCallback(const gpsCalibration::IMTrack::ConstPtr& msg)
 {
     COORDXYZTW temp;
-    ROS_INFO("I subscribe %ld",msg->track.size());
+    ROS_INFO("I subscribe %ld, and pid is: %d",msg->track.size(), (int)getpid());
     if(this)
     {
         for(int i=0;i<msg->track.size();++i)
@@ -36,7 +36,6 @@ void LongDisTrackPro::trackCalibrationCallback(const gpsCalibration::IMTrack::Co
         // return ENUgps coordinate ,this will be used ICP
         vector<COORDXYZTW> localCoor= this->gps.GPSToENU(this->SLAMTrackTmp);
         // construct icp class to complete match
-        cout<<"slamtracksize= "<<this->SLAMTrackTmp.size()<<"enusize= "<<localCoor.size()<<"weight= "<<this->getWeightCoe().size()<<endl;
         trackCalibration* trackICPhandle=new trackCalibration(this->SLAMTrackTmp,localCoor,this->getWeightCoe());
         trackICPhandle->doICP();
         //get ICP outcome
@@ -71,34 +70,37 @@ void LongDisTrackPro::trackCalibrationCallback(const gpsCalibration::IMTrack::Co
         delete trackICPhandle;
         return;
     }else if(this->SLAMTrackTmp.size()==0){
-        //this->outputData();
         this->msgAssign(msgwithweight);
         flag = 0;
         data_pub2.publish(msgwithweight);
-        cout<<"publish success!"<<endl;
-        //ros::spinOnce();
     }
     return;
 }
+
 int main(int argc,char** argv)
 {  
-    if(argc<4)
+    if(argc< 4)
     {
         perror("arguments error usage argv[1]=gps_original_path argv[2]=projectmethod(UTM/Gaussion) argv[3]=bandwidth");
         return -1;
     }
     int band=atoi(argv[3]);
+
     ros::init(argc, argv, "listener");
     ros::NodeHandle n;
+
     LongDisTrackPro *longDistanceHandle= new LongDisTrackPro(argv[1],argv[2],band);
-    ros::Rate r(10);
-    // tell master that this node will receive topic named slam_track
-    ros::Subscriber data_sub = n.subscribe("slam_track",1000,&LongDisTrackPro::trackCalibrationCallback,longDistanceHandle);
-    // register to master that this node will publish topic named gps_weight
-    data_pub2 = n.advertise<gpsCalibration::IMTrack>("gps_weight",2);
+
+    //tell master that this node will receive topic named slam_track
+    ros::Subscriber data_sub= n.subscribe("slam_track", 1000, &LongDisTrackPro::trackCalibrationCallback, longDistanceHandle);
+
+    //register to master that this node will publish topic named gps_weight
+    data_pub2= n.advertise<gpsCalibration::IMTrack>("gps_weight",2);
+
     while(flag)
     {
         ros::spinOnce();
     }
+
     return 0;
 }
