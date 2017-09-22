@@ -86,13 +86,18 @@ $ miniDemo/
     2. gps_input_filename:
        original GPS data with type GPRMC
        gps_input_filename= "./data/original_gps_data.txt"
+    
+    3. result_control:
+       output KML files or publish messages to other nodes
+       1- output KML files
+       2- publish messages to other nodes   
        
     Output filenames:
-    3. gps_original_filename:
+    4. gps_original_filename:
        original GPS track type with KML format
        gps_original_filename=  "./data/original_gps_track.kml"
        
-    4. gps_improved_filename:
+    5. gps_improved_filename:
        imporved accurate GPS track type with KML format
        gps_improved_filename=  "./data/calibrated_gps_track.kml"
 ```
@@ -133,8 +138,24 @@ The GPSRMC is protocol of GPSRMC's communication:
 $GPRMC,085223.136,A,3957.6286,N,11619.2078,E,0.06,36.81,180908,,,A\*57
 
 ### 2. Output
+#### 2.1 KML Files
 The results are stored in gpsCalibration/data. We provide calibrated GPS in KML formats.<br/>
 You can download Google Earth [here](https://www.google.com/earth/download/ge/) and open KML files.
+#### 2.2 Messages
+The messages are shown in *gpsCalibration/src/gpsCalibration/msg*.<br/>
+In your node.cpp, you should include head files first:
+```
+#include "gpsCalibration/IMMessage.h"
+#include "gpsCalibration/IMGPS.h
+```
+and type codes in your node.cpp:
+```
+ros::Subscriber calibratedGPS= nh.subscribe<>("/imorpheus_gps", 1, GPSHandle);
+void GPSHandle(const gpsCalibration::IMMessagePtr& GPSWithWeight)
+{
+	//Your process codes;
+}
+```
 
 ## Questions
   You can ask any question [here](https://github.com/iMorpheusAI/gpsCalibration/issues) or send us [emails](product@imorpheus.ai).
