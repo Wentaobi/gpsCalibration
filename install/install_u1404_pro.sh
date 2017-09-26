@@ -5,6 +5,8 @@
 ROS-indigo version for ubuntu 14.04.
 There are many different libraries and tools in ROS.
 We provided the full configurations to set our environment.
+Ps: We advice you use apt-get to install, 
+    and make sure that it soloves the dependency in ros-indigo.
 !
 sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list';
 sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116;
@@ -18,11 +20,19 @@ source ~/.bashrc;
 #PCL
 : << !
 The Point Cloud Library (or PCL) is a large scale,
-PCL-1.7.0 is provided for ubuntu 14.04
+open project for 2D/3D image and point cloud processing.
+PCL-1.8.0 is provided for ubuntu 14.04.
+Ps: The library of this version is important for our ros package.
 !
-sudo add-apt-repository ppa:v-launchpad-jochen-sprickerhof-de/pcl;
-sudo apt-get update;
-sudo apt-get install -y libpcl-all;
+mkdir build;
+wget https://github.com/PointCloudLibrary/pcl/archive/pcl-1.8.0.tar.gz
+cd ./build;
+tar -zvxf pcl-1.8.0.tar.gz;
+cd ./pcl-pcl-1.8.0 && mkdir build && cd build;
+cmake ../;
+make && sudo make install;
+cd ../../../;
+rm -rf build;
 
 #EIGEN
 sudo apt-get install -y libeigen3-dev;
