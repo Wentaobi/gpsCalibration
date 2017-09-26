@@ -106,7 +106,8 @@ $ miniDemo/
 $ source setup.sh
 $ cd data
 $ vi bag_list.txt
-  modify the point cloud data bag path: ./data/miniDemo/bag_0
+  modify the point cloud data bag path: 
+  ./data/miniDemo/bag_0
 $ cp ./miniDemo/original_gps_data.txt ./
 ```
 4.*Okay, you can run command:*
