@@ -13,7 +13,7 @@ class trackCalibration
 {
     public:
         //track ICP, initial the private variables
-        trackCalibration(vector<COORDXYZTW> &SLAMTrackTmp, vector<COORDXYZTW> &ENUTrackTmp, vector<double> weightCoeTmp);
+        trackCalibration(vector<COORDXYZTW> &SLAMTrackTmp, vector<COORDXYZTW> &ENUTrackTmp,vector<double> weightCoeTmp);
 
         //do the icp
         int doICP();

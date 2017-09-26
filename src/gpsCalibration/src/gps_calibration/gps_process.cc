@@ -9,7 +9,7 @@ GPSPro::GPSPro()
     type = 3;
 }
 
-GPSPro::GPSPro(string originalGPSPath,string method,int type)
+GPSPro::GPSPro(string &originalGPSPath,string &method,int &type)
 {
     this->originalGPSPath = originalGPSPath;
 
@@ -305,6 +305,11 @@ vector<COORDXYZTW> GPSPro::GPSToENU(vector<COORDXYZTW> slamTrack)
 
     if(1 == getGPS(originalGPSPath,slamTrackTime,WGSBL,GPSTime))
     {
+        exit(0);
+    }
+    if(GPSTime.empty() && WGSBL.empty())
+    {
+        cout << "WARN: cannot find GPS information corresponding to slam track time,please check GPS original file." << endl;
         exit(0);
     }
     gpsProcess(WGSBL,GPSTime);

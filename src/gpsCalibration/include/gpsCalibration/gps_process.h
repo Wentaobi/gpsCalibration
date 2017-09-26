@@ -25,7 +25,7 @@ class GPSPro
 {
     public:
         GPSPro();
-        GPSPro(string originalGPSPath,string method,int type);
+        GPSPro(string &originalGPSPath,string &method,int &type);
         int getType();    // get type value
         void setType(int type);  // set type value
         string getMethod();    // get transform method

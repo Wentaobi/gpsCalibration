@@ -1,134 +1,130 @@
-#include <fstream>
-#include <iostream>
+#include <ros/ros.h>
 #include <stdio.h>
-#include <iomanip>
+#include <boost/function.hpp>
 
+#include "common.h"
+#include "gps_process.h"
+#include "track_calibration.h"
 #include "weight_calculation.h"
-#include "long_distance_track_process.h"
+#include "gpsCalibration/IMTrack.h"
+#include "gpsCalibration/IMLocalXYZT.h"
 
-using namespace std;
+#define MAXITERATOR 5
+#define IMRATE 1.0
 
-int LongDisTrackPro::calcICPweightCoe(int coeSort)
+int flag = 1;
+ros::Publisher data_pub2;
+gpsCalibration::IMTrack msgWithWeight;
+vector<COORDXYZTW> totalTrack;
+GPSPro gps;
+
+// merge all GPS track
+void merge(vector<COORDXYZTW> localCoor,vector<double> weightCoe)
 {
-    this->coeSort=coeSort;
-    if(coeSort==1)
+    if(localCoor.size() != weightCoe.size())
     {
-        wcca.ICPWeightCoeCal(this->SLAMTrackTmp,this->weightCoe);
-        return 1;
-    }
-    else if(coeSort==2)
-    {
-        wcca.ICPWeightCoeCal(this->SLAMTrackTmp,this->weightCoe, this->ENUOriTMP, this->SLAMRotatedTrackTmp);
-        return 2;
-    }else{
-        std::cerr<<"parameter error need 1 or 2"<<std::endl;
-        return -1;
-    }
-}
-//type 0 is init 1 is update 
-void LongDisTrackPro::initOrupdateEnuori(vector<COORDXYZTW> ENUOriTMP,int len,int type)
-{
-    if(type==0)
-    {
-        for(int i=0;i<len;++i)
-        {
-            this->ENUOriTMP.push_back(ENUOriTMP[i]);
-        }
-    }
-    else if(type==1)
-    {
-        for(int i=0;i<len;++i)
-        {
-            this->ENUOriTMP[i]=ENUOriTMP[i];
-        }
-    }
-}
-void LongDisTrackPro::initOrupdateSLAMRotatedTrack(vector<COORDXYZTW> SLAMRotatedTrackTmp,int len,int type)
-{
-    if(type==0)
-    {
-        for(int i=0;i<len;++i)
-        {
-            this->SLAMRotatedTrackTmp.push_back(SLAMRotatedTrackTmp[i]);
-        }
-    }
-    else if(type==1)
-    {
-        for(int i=0;i<len;++i)
-        {
-            this->SLAMRotatedTrackTmp[i]=SLAMRotatedTrackTmp[i];
-        }
-    }
-}
-void LongDisTrackPro::updateSLAMtrackTmp(vector<COORDXYZTW> proENUTrack,int len)
-{
-    for(int i;i<len;++i)
-    {
-        this->SLAMTrackTmp[i]=proENUTrack[i];
-    }
-}
-void LongDisTrackPro::updateWeightCoe(vector<float> weightCoe,int len)
-{
-    for(int i=0;i<len;++i)
-    {
-        this->weightCoe[i]=weightCoe[i];
-    }
-}
-void LongDisTrackPro::mergeENUOriwithWeight()
-{
-    COORDXYZTW temp;
-    if(this->ENUOriTMP.size() != this->weightCoe.size())
-    {
-        cerr<<"can not merge because they have not same size"<<endl;
-        cout<<"ENUOriTMPsize= "<<this->ENUOriTMP.size()<<" weightCoesize= "<<this->weightCoe.size()<<endl;
+        cout << "ERROR: ENU coordinate size is not equal to weight size" << endl;
         exit(-1);
     }
-    for(int i=0;i<this->ENUOriTMP.size();++i)
+    for(int index = 0; index < localCoor.size(); index ++)
     {
-        temp.x=ENUOriTMP[i].x;
-        temp.y=ENUOriTMP[i].y;
-        temp.z=ENUOriTMP[i].z;
-        temp.t=ENUOriTMP[i].t;
-        temp.w=this->weightCoe[i];
-        ENUOriFinal.push_back(temp);
+        COORDXYZTW tmp;
+        tmp.x = localCoor[index].x;
+        tmp.y = localCoor[index].y;
+        tmp.z = localCoor[index].z;
+        tmp.t = localCoor[index].t;
+        tmp.w = weightCoe[index];
+        totalTrack.push_back(tmp);
     }
-    this->weightCoe.clear();
-    this->SLAMRotatedTrackTmp.clear();
-    this->ENUOriTMP.clear();
+    
 }
-LongDisTrackPro::LongDisTrackPro(string originalGPSPath1,string method1,int type1)                                                                               
+
+void longDisTrackPro(const gpsCalibration::IMTrackPtr& msg)
 {
-    gps.setGPSPath(originalGPSPath1);
-    gps.setMethod(method1);
-    gps.setType(type1);
-}
-int LongDisTrackPro::outputData()
-{
-     ofstream ifile;
-     ifile.open("mergefile.txt",fstream::out); 
-     if(NULL==ifile)
-     {
-         printf("open  error\n");
-         return 1;
-     }
-     vector<COORDXYZTW>::iterator p;
-     for(p= this->ENUOriFinal.begin(); p!= this->ENUOriFinal.end();p++)
-     {   
-         ifile<<setprecision(15)<< p->x<<" "<< p->y<< " "<< p->z<<" "<< p->t<<" "<<p->w<<endl;
-     }
-     ifile.close();
-     return 1;
-}
-void LongDisTrackPro::msgAssign(gpsCalibration::IMTrack & msg)
-{
-    gpsCalibration::IMLocalXYZT temp;
-    for(int i=0;i<ENUOriFinal.size();++i)
+    if(msg->track.empty())
     {
-        temp.x=ENUOriFinal[i].x;
-        temp.y=ENUOriFinal[i].y;
-        temp.z=ENUOriFinal[i].z;
-        temp.t=ENUOriFinal[i].t;
-        temp.w=ENUOriFinal[i].w;
-        msg.track.push_back(temp);
+        if(totalTrack.empty())
+        {
+            cout << "WARN: no GPS track,please check it" << endl;
+            exit(-1);
+        }
+        msgWithWeight = fromCOORDXYZTWtoIMTrack(totalTrack);
+        data_pub2.publish(msgWithWeight);
+        flag = 0;
     }
+    else
+    {
+        vector<COORDXYZTW> SLAMTrackTmp = fromIMTracktoCOORDXYZTW(msg);   // msg convert to COORDXYZTW
+        WeightCoeCal wcca;
+        vector<double> weightCoe;
+        wcca.ICPWeightCoeCal(SLAMTrackTmp,weightCoe);       
+
+        vector<COORDXYZTW> localCoor = gps.GPSToENU(SLAMTrackTmp);     // return ENUgps coordinate,this will be used ICP
+        //construct icp class to complete match
+        trackCalibration trackICPHandle(SLAMTrackTmp,localCoor,weightCoe);
+        trackICPHandle.doICP();
+        //get ICP result
+        vector<COORDXYZTW> proENUTrack;
+        trackICPHandle.doCalibration(proENUTrack);
+
+        for(int i = 1; i <= MAXITERATOR; i ++)
+        {
+            weightCoe.clear();
+
+            wcca.ICPWeightCoeCal(SLAMTrackTmp,weightCoe,localCoor,proENUTrack);
+
+            trackCalibration trackICPHandle2(proENUTrack,localCoor,weightCoe);
+            proENUTrack.clear();
+            trackICPHandle2.doICP();
+            trackICPHandle2.doCalibration(proENUTrack);
+        }
+        merge(localCoor,weightCoe);
+        SLAMTrackTmp.clear();
+
+    }
+}
+
+int main(int argc,char **argv)
+{
+    if(argc < 4)
+    {
+        perror("arguments error usage argv[1]=gps_original_path argv[2]=projectmethod(UTM/Gaussion) argv[3]=bandwidth(3/6)");
+        return -1;
+    }
+
+    if(strcmp(argv[2],"UTM") && strcmp(argv[2],"Gaussion"))
+    {
+        perror("argv[2]=projectmethod(UTM/Gaussion)");
+        return -1;
+    }
+
+    if(atof(argv[3]) != 3 && atof(argv[3]) != 6)
+    {
+        perror("argv[3]=bandwidth(3/6)");
+        return -1;
+    }
+    string originalGPS = argv[1];
+    string method = argv[2];
+    int type = atof(argv[3]);
+
+    gps.setGPSPath(originalGPS);
+    gps.setMethod(method);
+    gps.setType(type);
+
+    ros::init(argc,argv,"long_distance_track_process");
+    ros::NodeHandle nh;
+
+    ros::Rate rate(IMRATE);
+
+    ros::Subscriber data_sub = nh.subscribe("slam_track",1000,longDisTrackPro);
+    data_pub2 = nh.advertise<gpsCalibration::IMTrack>("gps_weight",2);
+
+    while(flag)
+    {
+        rate.sleep();
+        ros::spinOnce();
+    }
+
+    cout << "long distance track finished." << endl;
+    return 0;
 }

@@ -8,13 +8,17 @@ int WeightCoeCal::ICPWeightCoeCal(vector<COORDXYZTW> &SLAMTrackTmp,vector<double
     for(int is= 0; is< SLAMTrackTmp.size(); is++)
     {
         if(0==is)
+        {
             weightCoe.push_back(1.0);
+            //SLAMTrackTmp[is].w = 1.0;
+        }
         else
         {
             disx= SLAMTrackTmp[is+ 1].x- SLAMTrackTmp[is].x;
             disy= SLAMTrackTmp[is+ 1].y- SLAMTrackTmp[is].y;
             dis= sqrt(disx* disx+ disy* disy);
             weightTemp= min(dis/SPEED, 1.0);
+            //SLAMTrackTmp[is].w = weightTmp;
             weightCoe.push_back(weightTemp);
         }
     }

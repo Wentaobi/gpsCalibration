@@ -1,7 +1,7 @@
 #include "track_calibration.h"
 
 //track data initial
-trackCalibration::trackCalibration(vector<COORDXYZTW> &SLAMTrackTmp, vector<COORDXYZTW> &ENUTrackTmp, vector<double> weightCoeTmp)
+trackCalibration::trackCalibration(vector<COORDXYZTW> &SLAMTrackTmp, vector<COORDXYZTW> &ENUTrackTmp,vector<double> weightCoeTmp)
 {
     //initial the track, weight matrix
     dataInitial(SLAMTrackTmp, ENUTrackTmp, weightCoeTmp);
