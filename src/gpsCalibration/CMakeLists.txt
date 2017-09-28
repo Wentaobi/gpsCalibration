@@ -58,6 +58,7 @@ find_package(OpenCV REQUIRED)
  add_message_files(
    FILES
    IMLocalXYZT.msg
+   IMLocalXYZTW.msg
    IMMessage.msg
    IMTrack.msg
    IMGPS.msg

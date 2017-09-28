@@ -293,7 +293,7 @@ int GPSPro::gpsProcess(vector<pair<double,double> > &WGSBL,vector<double> GPSTim
 }
 
 /* GPS coordinate transform to ENU coordinate */
-vector<COORDXYZTW> GPSPro::GPSToENU(vector<COORDXYZTW> slamTrack)
+vector<COORDXYZT> GPSPro::GPSToENU(vector<COORDXYZT> slamTrack)
 {
     vector<pair<double,double> > WGSBL,LocalXY,interLocalXY;
     vector<double> GPSTime,slamTrackTime;
@@ -324,10 +324,10 @@ vector<COORDXYZTW> GPSPro::GPSToENU(vector<COORDXYZTW> slamTrack)
     }
     interPolate(LocalXY,GPSTime,slamTrackTime,interLocalXY);
    
-    vector<COORDXYZTW> localCoor;
+    vector<COORDXYZT> localCoor;
     for(int index = 0; index < interLocalXY.size(); index ++)
     {
-        COORDXYZTW tmp;
+        COORDXYZT tmp;
         tmp.x = interLocalXY[index].first;
         tmp.y = interLocalXY[index].second;
         tmp.z = slamTrack[index].z;

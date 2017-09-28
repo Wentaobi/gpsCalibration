@@ -12,9 +12,9 @@ class WeightCoeCal
 {
     public:
         //weight coefficient come from slam speed
-        int ICPWeightCoeCal(vector<COORDXYZTW> &SLAMTrackTmp,vector<double> &weightCoe);
+        int ICPWeightCoeCal(vector<COORDXYZT> &SLAMTrackTmp,vector<double> &weightCoe);
         //weight coefficient come from difference between ENUori and SLAMrotated
-        int ICPWeightCoeCal(vector<COORDXYZTW> &SLAMTrackTmp,vector<double> &weightCoe,vector<COORDXYZTW> &ENUOriTMP, vector<COORDXYZTW> &SLAMRotatedTrackTmp);
+        int ICPWeightCoeCal(vector<COORDXYZT> &SLAMTrackTmp,vector<double> &weightCoe,vector<COORDXYZT> &ENUOriTMP, vector<COORDXYZT> &SLAMRotatedTrackTmp);
 
 };
 

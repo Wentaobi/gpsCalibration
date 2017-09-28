@@ -17,9 +17,9 @@ using namespace std;
 
 int flag = 1;
 
-queue<vector<COORDXYZTW> > slamTrackVector;
-vector<COORDXYZTW> ENUCoorVector;
-vector<COORDXYZTW> gps;
+queue<vector<COORDXYZT> > slamTrackVector; // short distance track vector
+vector<COORDXYZTW> ENUCoorVector;    // fininal output
+vector<COORDXYZTW> gps;             // total GPS track
 
 int timetodie = 0;
 void sigproc(int param)
@@ -29,8 +29,8 @@ void sigproc(int param)
     //printf("Got ctrl-c\n");
 }
 
-
-void getGPS(vector<COORDXYZTW> slamTrack,vector<COORDXYZTW> &slamWithGPS,vector<COORDXYZTW> &GPSWithSlam,vector<double> &weight)
+/* get GPS track from total GPS track which timestamp is correspond to slam track timestamp*/
+void getGPS(vector<COORDXYZT> slamTrack,vector<COORDXYZT> &slamWithGPS,vector<COORDXYZT> &GPSWithSlam,vector<double> &weight)
 {
     int i = 0;
     for(int index = 0; index < gps.size(); index ++)
@@ -39,7 +39,12 @@ void getGPS(vector<COORDXYZTW> slamTrack,vector<COORDXYZTW> &slamWithGPS,vector<
         {
             if(gps[index].t == slamTrack[i].t)
             {
-                GPSWithSlam.push_back(gps[index]);
+                COORDXYZT temp;
+                temp.x = gps[index].x;
+                temp.y = gps[index].y;
+                temp.z = gps[index].z;
+                temp.t = gps[index].t;
+                GPSWithSlam.push_back(temp);
                 weight.push_back(gps[index].w);
                 slamWithGPS.push_back(slamTrack[i]);
             }
@@ -57,26 +62,33 @@ void getGPS(vector<COORDXYZTW> slamTrack,vector<COORDXYZTW> &slamWithGPS,vector<
     }
 }
 
-void merge(vector<COORDXYZTW> tmp)
+// merge all short distance track
+void merge(vector<COORDXYZT> slamTrack,vector<double> weight)
 {
     if(ENUCoorVector.size() == 0)
     {
-        for(int index = 0; index < tmp.size(); index ++)
+        for(int index = 0; index < slamTrack.size(); index ++)
         {
-            ENUCoorVector.push_back(tmp[index]);
+            COORDXYZTW temp;
+            temp.x = slamTrack[index].x;
+            temp.y = slamTrack[index].y;
+            temp.z = slamTrack[index].z;
+            temp.t = slamTrack[index].t;
+            temp.w = weight[index];
+            ENUCoorVector.push_back(temp);
         }
     }
     else
     {
-        int indexTmp = 0;
-        
+        int indexTmp = 0; 
         int num = 1;
         double coe1 = 0.0,coe2 = 0.0;
         int smWindow = -1;
         int opNo = -1;
         for(int index = 0; index < ENUCoorVector.size(); index ++)
         {
-            if(ENUCoorVector[index].t == tmp[indexTmp].t)
+            //overlap track merge
+            if(ENUCoorVector[index].t == slamTrack[indexTmp].t)
             {
                 if(-1 == opNo)
                 {
@@ -98,17 +110,23 @@ void merge(vector<COORDXYZTW> tmp)
                     coe1 = (opNo - num + 1) / (2.0 * smWindow);
                     coe2 = (1.0 - (opNo - num + 1) / (2.0 * smWindow));
                 }
-                ENUCoorVector[index].x = ENUCoorVector[index].x * coe1 + tmp[indexTmp].x * coe2;
-                ENUCoorVector[index].y = ENUCoorVector[index].y * coe1 + tmp[indexTmp].y * coe2;
-                ENUCoorVector[index].z = ENUCoorVector[index].z * coe1 + tmp[indexTmp].z * coe2;
-                ENUCoorVector[index].w = ENUCoorVector[index].w * coe1 + tmp[indexTmp].w * coe2;
+                ENUCoorVector[index].x = ENUCoorVector[index].x * coe1 + slamTrack[indexTmp].x * coe2;
+                ENUCoorVector[index].y = ENUCoorVector[index].y * coe1 + slamTrack[indexTmp].y * coe2;
+                ENUCoorVector[index].z = ENUCoorVector[index].z * coe1 + slamTrack[indexTmp].z * coe2;
+                ENUCoorVector[index].w = ENUCoorVector[index].w * coe1 + weight[indexTmp] * coe2;
                 indexTmp ++;
                 num ++;
             }
         }
-        for(;indexTmp < tmp.size(); indexTmp ++)
+        for(;indexTmp < slamTrack.size(); indexTmp ++)
         {
-            ENUCoorVector.push_back(tmp[indexTmp]);
+            COORDXYZTW temp;
+            temp.x = slamTrack[indexTmp].x;
+            temp.y = slamTrack[indexTmp].y;
+            temp.z = slamTrack[indexTmp].z;
+            temp.t = slamTrack[indexTmp].t;
+            temp.w = weight[indexTmp];
+            ENUCoorVector.push_back(temp);
         }
     }
 }
@@ -116,16 +134,12 @@ void merge(vector<COORDXYZTW> tmp)
 
 void GPSWithWeightHandle(const gpsCalibration::IMTrackPtr& GPSWithWeight)
 {
-    for(int index = 0; index < GPSWithWeight->track.size(); index ++)
+    if(GPSWithWeight->trackWithWeight.empty())
     {
-        COORDXYZTW tmp;
-        tmp.x = GPSWithWeight->track[index].x; 
-        tmp.y = GPSWithWeight->track[index].y;
-        tmp.z = GPSWithWeight->track[index].z;
-        tmp.t = GPSWithWeight->track[index].t;
-        tmp.w = GPSWithWeight->track[index].w;
-        gps.push_back(tmp);
+        cout << "WARN: total GPS track from long_distance_track_process_node is NULL." << endl;
+        exit(0);
     }
+    gps = fromIMTracktoCOORDXYZTW(GPSWithWeight);        // GPS track message convert to GPS track
 }
 
 void slamTrackHandle(const gpsCalibration::IMTrackPtr& slamTrack)
@@ -138,17 +152,7 @@ void slamTrackHandle(const gpsCalibration::IMTrackPtr& slamTrack)
         }
         else
         {
-            vector<COORDXYZTW> slamTrackCoor;
-
-            for(int index = 0; index < slamTrack->track.size(); index ++)
-            {
-                COORDXYZTW tmp;
-                tmp.x = slamTrack->track[index].x;
-                tmp.y = slamTrack->track[index].y;
-                tmp.z = slamTrack->track[index].z;
-                tmp.t = slamTrack->track[index].t;
-                slamTrackCoor.push_back(tmp);
-            }   
+            vector<COORDXYZT> slamTrackCoor = fromIMTracktoCOORDXYZT(slamTrack);
             slamTrackVector.push(slamTrackCoor);
         }
     }
@@ -157,10 +161,20 @@ void slamTrackHandle(const gpsCalibration::IMTrackPtr& slamTrack)
 
 int main(int argc,char **argv)
 {
-    ros::init(argc,argv,"gpsCalibration");
+    ros::init(argc,argv,"short_distance_track_process");
     ros::NodeHandle nh;
-  
+ 
+    if(strcmp(argv[1],"UTM") && strcmp(argv[1],"Gaussion"))
+    {
+        cout << "ERROR: argv[1]=projectmethod(UTM/Gaussion)." << endl;
+        return 1;
+    }
     string method = argv[1];
+    if(atoi(argv[2]) != 3 && atoi(argv[2]) != 6)
+    {
+        cout << "ERROR: argv[2]=bandwidth(3/6)" << endl;
+        return 1;
+    }
     int type = atoi(argv[2]);
     int KMLControl = atoi(argv[3]);
 
@@ -175,15 +189,15 @@ int main(int argc,char **argv)
     ros::Subscriber subSlamTrack = nh.subscribe<>("/slam_track",1024,slamTrackHandle);
     ros::Publisher IMCalibratedGPS= nh.advertise<gpsCalibration::IMMessage> ("/imorpheus_gps", 2);
 
-    ros::Rate rate(IMRATE);
+    ros::Rate rate(IMRATE);   // set update rate
 
-    signal(SIGINT,sigproc);
+    signal(SIGINT,sigproc);   // handle ctrl-c signal
 
     while(flag)
     {
         if(timetodie)
         {
-            cout << "got ctrl-c signal." << endl;
+            //cout << "got ctrl-c signal." << endl;
             return 1;
         }
         rate.sleep();
@@ -192,26 +206,26 @@ int main(int argc,char **argv)
         {
             while(!slamTrackVector.empty())
             {
-                vector<COORDXYZTW> GPSWithSlam,ENUCoor,slamWithGPS;
+                vector<COORDXYZT> GPSWithSlam,ENUCoor,slamWithGPS;
                 vector<double> weight;
-                vector<COORDXYZTW> slamTrack = slamTrackVector.front();
+                vector<COORDXYZT> slamTrack = slamTrackVector.front();
                 slamTrackVector.pop();
-                getGPS(slamTrack,slamWithGPS,GPSWithSlam,weight);
-                trackCalibration tc(slamWithGPS,GPSWithSlam,weight);
+                getGPS(slamTrack,slamWithGPS,GPSWithSlam,weight);     // get GPS track
+                trackCalibration tc(slamWithGPS,GPSWithSlam,weight);   // contruct icp class object
                 tc.doICP();
-                tc.doCalibration(ENUCoor);
-                merge(ENUCoor);
+                tc.doCalibration(ENUCoor);         // get result
+                merge(ENUCoor,weight);          // merge all short distance track
             }
         }
     }
 
     if(timetodie)
     {
-        cout << "got ctrl-c signal." << endl;
+        //cout << "got ctrl-c signal." << endl;
         return 1;
     }
-    
-    if(1==KMLControl)
+
+    if(1==KMLControl)     // create KML file
     {
         string originalKMLFileName= argv[4];
         string improveKMLFileName= argv[5];
@@ -229,7 +243,7 @@ int main(int argc,char **argv)
 
         cout << "==================== END ====================" << endl;
     }
-    else if(2==KMLControl)
+    else if(2==KMLControl)      // publish GPS track message
     {
         gpsCalibration::IMMessage msgForUser;
         gpsCalibration::IMGPS msgTemp;

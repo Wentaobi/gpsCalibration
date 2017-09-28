@@ -33,19 +33,18 @@
 
 using namespace std;
 
-static int times = 0;
-int firstMessage = 1;     //handle the first message odometry,first odometry has no distance
+int times = 0;
 int rowNum = 0;         // message index
 static int bagIndex = 0;     // bag index
 static int fileNum = 0;    // track index
 static double totalDistance[2];
 static double overlapDistance[2];
-static double totalDis = 0;
-vector<string> bagList;
+static double totalDis = 0; 
+vector<string> bagList;   // bag path
 
 vector<std::string> tempTopics;  //message topic
 vector<sensor_msgs::PointCloud2> cloudTopics;
-nav_msgs::Odometry preOdometry;              //subscribe message
+nav_msgs::Odometry::ConstPtr preOdometry;              //subscribe message
 rosbag::Bag readBag;       //read bag handler
 sensor_msgs::PointCloud2::ConstPtr pointcloud2;          //publish message
 gpsCalibration::IMTrack slamTrack;
@@ -83,27 +82,22 @@ void subOdometryHandler(const nav_msgs::Odometry::ConstPtr& subOdometry)
         localCoor.t = subOdometry->header.stamp.toSec();
         slamTrack.track.push_back(localCoor);
 
-        DISTANCE tmpdis;
-        if(firstMessage == 1)    //first odomtry
+        DISTANCE tmpdis = {0,0,0,0};    // init tmpdis
+        tmpdis.bagNum = bagIndex;
+        tmpdis.row = rowNum;
+        if(NULL == preOdometry)
         {
-            preOdometry = (*subOdometry);
-            tmpdis.bagNum = bagIndex;
-            tmpdis.row = rowNum;
             tmpdis.distance = 0;
-            tmpdis.timestamp = (double)subOdometry->header.stamp.toSec();
-            firstMessage = 0;
         }
-        else                         // the rest odometry
+        else
         {
-            tmpdis.bagNum = bagIndex;
-            tmpdis.row = rowNum;
-            tmpdis.distance = sqrt(pow(subOdometry->pose.pose.position.x - preOdometry.pose.pose.position.x,2)      // calculate distance between two odometry points
-                            + pow(subOdometry->pose.pose.position.y - preOdometry.pose.pose.position.y,2))
-                            + totalDis;
-            tmpdis.timestamp = (double)subOdometry->header.stamp.toSec();
-
-            preOdometry = (*subOdometry);
+            tmpdis.distance = sqrt(pow(subOdometry->pose.pose.position.x - preOdometry->pose.pose.position.x,2)
+                              + pow(subOdometry->pose.pose.position.y - preOdometry->pose.pose.position.y,2)
+                              + pow(subOdometry->pose.pose.position.z - preOdometry->pose.pose.position.z,2))
+                              + totalDis;
         }
+        tmpdis.timestamp = (double)subOdometry->header.stamp.toSec();
+        preOdometry = subOdometry;    // update preOdometry
     
         if(tmpdis.distance <= totalDistance[times] - overlapDistance[times])    //next publish message location
         {
@@ -117,11 +111,10 @@ void subOdometryHandler(const nav_msgs::Odometry::ConstPtr& subOdometry)
             }
         }
         totalDis = tmpdis.distance;
-        //printf("totaldis = %lf   pubLocation.distance = %lf\n",totaldis,pubLocation.distance);
     }
     else
     {
-        cout<<"publish message to loam,but not receive odometry"<<endl;
+        cout<<" WARN: publish message to loam,but not receive odometry"<<endl;
     }
 }
 
@@ -133,7 +126,7 @@ void readBagList(char *fileName,vector<string> &bagList)
     ifile.open(fileName);
     if(NULL==ifile)
     {
-        printf("open %s error,please check it\n",fileName);
+        printf("ERROR: open %s error,please check it\n",fileName);
         exit(0);
     }
     //read file
@@ -149,7 +142,7 @@ void readBagList(char *fileName,vector<string> &bagList)
 
     if(bagList.empty())
     {
-        printf("%s is NULL,please check it.\n",fileName);
+        printf("WARN:%s is NULL,please check it.\n",fileName);
         exit(0);
     }
 }
@@ -181,7 +174,7 @@ long totalMessageNumber(vector<string> bagList,vector<long> &messageNumber)
     }
     catch(rosbag::BagIOException)
     {
-        cout<<"Cannot find bag path, Please check bag_list"<<endl;
+        cout<<"ERROR: Cannot find bag path, Please check bag_list"<<endl;
         exit(0);
     }
     return totalNum;
@@ -199,7 +192,7 @@ int main(int argc, char **argv)
     
     if(6 > argc)
     {
-        printf("parameter error\n");
+        printf("ERROR: parameter error\n");
         return 1;
     }
     char *bagListPath = argv[1];
@@ -219,13 +212,13 @@ int main(int argc, char **argv)
 
     ros::init(argc,argv,"input_data");
     ros::NodeHandle nh;
-    ros::Rate rate(IMRATE);
+    ros::Rate rate(IMRATE);    // set update rate
     rate.sleep();
 
     readBagList(bagListPath,bagList);
 
-    vector<long> messageNumber;
-    long totalMessage = totalMessageNumber(bagList,messageNumber);
+    vector<long> messageNumber;             // message number per bag
+    long totalMessage = totalMessageNumber(bagList,messageNumber);   // total message number
 
     ros::Publisher pubLaserCloud = nh.advertise<sensor_msgs::PointCloud2>("/velodyne_points",1024);      // publish pointcloud message
 	ros::Publisher slamTrackPub = nh.advertise<gpsCalibration::IMTrack>("/slam_track",2);
@@ -258,7 +251,7 @@ int main(int argc, char **argv)
             int end = 0;   // flag for end publish 
             char bagName[IMSDLEN];     // bag path
 
-            firstMessage = 1;  // init firstMessage
+            //firstMessage = 1;  // init firstMessage
             bagIndex = allLocation[allLocation.size()-1].bagNum;   // init bagIndex
 
             messageIndex = 0;
@@ -288,7 +281,7 @@ int main(int argc, char **argv)
                     if(timetodie == 1)   // get ctrl-c signal,return;
                     {
                         readBag.close();
-                        cout << "got ctrl-c signal." << endl;
+                        //cout << "got ctrl-c signal." << endl;
                         return 1; 
                     }
                  
@@ -324,6 +317,7 @@ int main(int argc, char **argv)
             slamTrack.track_flag = times;
             slamTrackVector.push(slamTrack);
             slamTrack.track.clear();
+            preOdometry = NULL;
             if(3 == slamTrackVector.size())
             {
                 slamTrackPub.publish(slamTrackVector.front());
@@ -370,7 +364,7 @@ int main(int argc, char **argv)
                     if(timetodie == 1)
                     {
                         readBag.close();
-                        cout << "got ctrl-c signal." << endl;
+                        //cout << "got ctrl-c signal." << endl;
                         return 1;
                     }
                     rowNum++;

@@ -1,7 +1,7 @@
 #include "weight_calculation.h"
 
 //speed weight coefficient
-int WeightCoeCal::ICPWeightCoeCal(vector<COORDXYZTW> &SLAMTrackTmp,vector<double> &weightCoe)
+int WeightCoeCal::ICPWeightCoeCal(vector<COORDXYZT> &SLAMTrackTmp,vector<double> &weightCoe)
 {
     double weightTemp;
     double disx, disy, dis;
@@ -27,7 +27,7 @@ int WeightCoeCal::ICPWeightCoeCal(vector<COORDXYZTW> &SLAMTrackTmp,vector<double
 }
 
 //icp weight coefficient
-int WeightCoeCal::ICPWeightCoeCal(vector<COORDXYZTW> &SLAMTrackTmp, vector<double> &weightCoe, vector<COORDXYZTW> &ENUOriTMP, vector<COORDXYZTW> &SLAMRotatedTrackTmp)
+int WeightCoeCal::ICPWeightCoeCal(vector<COORDXYZT> &SLAMTrackTmp, vector<double> &weightCoe, vector<COORDXYZT> &ENUOriTMP, vector<COORDXYZT> &SLAMRotatedTrackTmp)
 {
     double weightTemp;
     double disx, disy, dis;

@@ -1,7 +1,7 @@
 #include "track_calibration.h"
 
 //track data initial
-trackCalibration::trackCalibration(vector<COORDXYZTW> &SLAMTrackTmp, vector<COORDXYZTW> &ENUTrackTmp,vector<double> weightCoeTmp)
+trackCalibration::trackCalibration(vector<COORDXYZT> &SLAMTrackTmp, vector<COORDXYZT> &ENUTrackTmp,vector<double> weightCoeTmp)
 {
     //initial the track, weight matrix
     dataInitial(SLAMTrackTmp, ENUTrackTmp, weightCoeTmp);
@@ -28,7 +28,7 @@ int trackCalibration::doICP()
 }
 
 //track calibration
-int trackCalibration::doCalibration(vector<COORDXYZTW> &calENUTrack)
+int trackCalibration::doCalibration(vector<COORDXYZT> &calENUTrack)
 {
     //calibration
     calibrateGPSWithSLAMTrack(calENUTrack);
@@ -37,7 +37,7 @@ int trackCalibration::doCalibration(vector<COORDXYZTW> &calENUTrack)
 }
 
 //initial the vector date temp
-int trackCalibration::dataInitial(vector<COORDXYZTW> &SLAMTrackTmp, vector<COORDXYZTW> &ENUTrackTmp, vector<double> &weightCoeTmp)
+int trackCalibration::dataInitial(vector<COORDXYZT> &SLAMTrackTmp, vector<COORDXYZT> &ENUTrackTmp, vector<double> &weightCoeTmp)
 {
     int SLAMLineNo= SLAMTrackTmp.size(); 
     int ENULineNo= ENUTrackTmp.size(); 
@@ -79,14 +79,14 @@ int trackCalibration::dataInitial(vector<COORDXYZTW> &SLAMTrackTmp, vector<COORD
     }
 
     //calibrated track
-    COORDXYZTW trackTmp;
+    COORDXYZT trackTmp;
     for(int i= 0; i< ENULineNo; i++)
     {
         trackTmp.x= 0.0;
         trackTmp.y= 0.0;
         trackTmp.z= ENUTrackTmp[i].z;
         trackTmp.t= ENUTrackTmp[i].t;
-        trackTmp.w= weightCoeTmp[i];
+        //trackTmp.w= weightCoeTmp[i];
 
         calENUTrackTmp.push_back(trackTmp);
     }
@@ -686,7 +686,7 @@ int trackCalibration::coordRotated(MatrixXd transformT)
     Calibrate the GPS track by rotated slam track
         outPut: the average of whole regressed GPS track and rotated slam track
 */
-int trackCalibration::calibrateGPSWithSLAMTrack(vector<COORDXYZTW> &calENUTrack)
+int trackCalibration::calibrateGPSWithSLAMTrack(vector<COORDXYZT> &calENUTrack)
 { 
     int iNum;
     int iCoord;
@@ -732,14 +732,14 @@ int trackCalibration::calibrateGPSWithSLAMTrack(vector<COORDXYZTW> &calENUTrack)
     }
 
     //the results
-    COORDXYZTW trackTmp;
+    COORDXYZT trackTmp;
     for(int i= 0; i< numPoint; i++)
     {
         trackTmp.x= tempGPSReAverCoord(i, 0)+ ENUX0;
         trackTmp.y= tempGPSReAverCoord(i, 1)+ ENUY0;
         trackTmp.z= calENUTrackTmp[i].z;
         trackTmp.t= calENUTrackTmp[i].t;
-        trackTmp.w= calENUTrackTmp[i].w;
+        //trackTmp.w= calENUTrackTmp[i].w;
         calENUTrack.push_back(trackTmp);
     }
 

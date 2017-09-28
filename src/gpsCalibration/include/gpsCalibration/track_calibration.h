@@ -13,13 +13,13 @@ class trackCalibration
 {
     public:
         //track ICP, initial the private variables
-        trackCalibration(vector<COORDXYZTW> &SLAMTrackTmp, vector<COORDXYZTW> &ENUTrackTmp,vector<double> weightCoeTmp);
+        trackCalibration(vector<COORDXYZT> &SLAMTrackTmp, vector<COORDXYZT> &ENUTrackTmp,vector<double> weightCoeTmp);
 
         //do the icp
         int doICP();
 
         //do the calibration
-        int doCalibration(vector<COORDXYZTW> &calENUTrack);
+        int doCalibration(vector<COORDXYZT> &calENUTrack);
 
     private:
         //Define the numPoint to get the Point's number
@@ -33,7 +33,7 @@ class trackCalibration
         double ENUY0;
 
         //temp of calibrated ENU track
-        vector<COORDXYZTW> calENUTrackTmp;
+        vector<COORDXYZT> calENUTrackTmp;
 
         //Define the matrix
         MatrixXd SLAMCoord;
@@ -43,7 +43,7 @@ class trackCalibration
         MatrixXd SLAMRotatedCoord;
 
         //initial the vector date temp
-        int dataInitial(vector<COORDXYZTW> &SLAMTrackTmp, vector<COORDXYZTW> &ENUTrackTmp, vector<double> &weightCoeTmp);
+        int dataInitial(vector<COORDXYZT> &SLAMTrackTmp, vector<COORDXYZT> &ENUTrackTmp, vector<double> &weightCoeTmp);
 
         //icp
         int icp(MatrixXd *outT,MatrixXd *outD);
@@ -61,6 +61,6 @@ class trackCalibration
         int coordRotated(MatrixXd transMatrix);
 
         //calibrate the ENU track by rotated SLAM track
-        int calibrateGPSWithSLAMTrack(vector<COORDXYZTW>& track);
+        int calibrateGPSWithSLAMTrack(vector<COORDXYZT>& track);
 };
 #endif

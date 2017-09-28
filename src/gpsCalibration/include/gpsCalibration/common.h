@@ -42,9 +42,10 @@ typedef struct
 typedef pcl::PointXYZI PointType;
 //if you want to use these follow function please define __message_transform__ to 1
 vector<COORDXYZTW> fromIMTracktoCOORDXYZTW(const gpsCalibration::IMTrack::ConstPtr& msg);
+vector<COORDXYZT> fromIMTracktoCOORDXYZT(const gpsCalibration::IMTrack::ConstPtr& msg);
 
-gpsCalibration::IMTrack fromCOORDXYZTWtoIMTrack(vector<COORDXYZTW> & arraytrack); 
- 
+gpsCalibration::IMTrack fromCOORDXYZTWtoIMTrack(vector<COORDXYZTW> arraytrack); 
+gpsCalibration::IMTrack fromCOORDXYZTtoIMTrack(vector<COORDXYZT> arraytrack);
  
  inline double rad2deg(double radians)
  {
