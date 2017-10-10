@@ -25,8 +25,8 @@ PCL-1.8.0 is provided for ubuntu 14.04.
 Ps: The library of this version is important for our ros package.
 !
 mkdir build;
-wget https://github.com/PointCloudLibrary/pcl/archive/pcl-1.8.0.tar.gz
 cd ./build;
+wget https://github.com/PointCloudLibrary/pcl/archive/pcl-1.8.0.tar.gz
 tar -zvxf pcl-1.8.0.tar.gz;
 cd ./pcl-pcl-1.8.0 && mkdir build && cd build;
 cmake ../;
