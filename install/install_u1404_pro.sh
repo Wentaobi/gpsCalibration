@@ -12,6 +12,7 @@ sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main
 sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116;
 sudo apt-get update;
 sudo apt-get install -y ros-indigo-desktop-full;
+sudo apt install python-rosdep;
 sudo rosdep init;
 sudo rosdep update;
 echo "source /opt/ros/indigo/setup.bash" >> ~/.bashrc;
@@ -29,6 +30,7 @@ cd ./build;
 wget https://github.com/PointCloudLibrary/pcl/archive/pcl-1.8.0.tar.gz
 tar -zvxf pcl-1.8.0.tar.gz;
 cd ./pcl-pcl-1.8.0 && mkdir build && cd build;
+sudo apt-get install cmake;
 cmake ../;
 make && sudo make install;
 cd ../../../;
