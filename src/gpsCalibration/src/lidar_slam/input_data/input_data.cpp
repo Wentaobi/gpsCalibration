@@ -41,8 +41,8 @@ static double totalDistance[2];
 static double overlapDistance[2];
 static double totalDis = 0; 
 vector<string> bagList;   // bag path
-static long nMsgSendNum = 0;    //all sent messages number in one cycle
-static long nMsgLostNum = 0;    //all loss messages number in one cycle
+static unsigned long nMsgSendNum = 0;    //all sent messages number in one cycle
+static unsigned long nMsgLostNum = 0;    //all loss messages number in one cycle
 
 vector<std::string> tempTopics;  //message topic
 vector<sensor_msgs::PointCloud2> cloudTopics;
@@ -193,11 +193,11 @@ void showMessageHandleResult()
         float rate = (nMsgLostNum * 100) / nMsgSendNum;
         if (rate < 0.01)
         {
-            printf("[INFO]In one cycle,send message:%ld,lost message:%ld,message loss rate < 0.01%\n", nMsgSendNum, nMsgLostNum);
+            printf("[INFO]In one cycle,send message:%lu,lost message:%lu,message loss rate < 0.01%%\n", nMsgSendNum, nMsgLostNum);
         }
         else
         {
-            printf("[INFO]In one cycle,send message:%ld,lost message:%ld,message loss rate:%.2f%\n", nMsgSendNum, nMsgLostNum, rate);
+            printf("[INFO]In one cycle,send message:%lu,lost message:%lu,message loss rate:%.2f%%\n", nMsgSendNum, nMsgLostNum, rate);
         }
     }
 }
