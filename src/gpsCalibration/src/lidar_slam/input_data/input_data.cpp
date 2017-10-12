@@ -127,7 +127,7 @@ void readBagList(char *fileName,vector<string> &bagList)
     //open baglist.txt
     ifstream ifile;
     ifile.open(fileName);
-    if(NULL==ifile)
+    if(!ifile.is_open())
     {
         printf("ERROR: open %s error,please check it\n",fileName);
         exit(0);
