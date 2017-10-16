@@ -120,7 +120,7 @@ int GPSPro::getGPS(string originalGPSPath,vector<double> slamTrackTime,vector<pa
     // open GPS text
     ifstream ifile;
     ifile.open(originalGPSPath.c_str());
-    if(NULL == ifile)
+    if(!ifile.is_open())
     {
         printf("open %s error\n",originalGPSPath.c_str());
         return 1;
@@ -579,7 +579,7 @@ int GPSPro::createKML(string KMLFileName,vector<pair<double,double> > WGSBL,vect
     vector<string> configParameter = readKMLParameter();
     ofstream ofile;
     ofile.open(KMLFileName.c_str());
-    if(NULL == ofile)
+    if(!ofile.is_open())
     {
         printf("open %s error\n",KMLFileName.c_str());
         return 1;

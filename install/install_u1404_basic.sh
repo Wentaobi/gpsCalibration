@@ -16,6 +16,7 @@ sudo apt-get install -y ros-indigo-tf;
 sudo apt-get install -y ros-indigo-opencv3;
 sudo apt-get install -y ros-indigo-pcl-conversions;
 sudo apt-get install -y ros-indigo-nav-msgs;
+sudo apt install -y python-rosdep;
 sudo rosdep init;
 sudo rosdep update;
 echo "source /opt/ros/indigo/setup.bash" >> ~/.bashrc;
@@ -29,10 +30,11 @@ PCL-1.8.0 is provided for ubuntu 14.04.
 Ps: The library of this version is important for our ros package.
 !
 mkdir build;
-wget https://github.com/PointCloudLibrary/pcl/archive/pcl-1.8.0.tar.gz
 cd ./build;
+wget https://github.com/PointCloudLibrary/pcl/archive/pcl-1.8.0.tar.gz
 tar -zvxf pcl-1.8.0.tar.gz;
 cd ./pcl-pcl-1.8.0 && mkdir build && cd build;
+sudo apt-get install -y cmake; 
 cmake ../;
 make && sudo make install;
 cd ../../../;

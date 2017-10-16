@@ -8,6 +8,7 @@ sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main
 sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116;
 sudo apt-get update;
 sudo apt-get install -y ros-kinetic-desktop-full;
+sudo apt install -y python-rosdep;
 sudo rosdep init;
 sudo rosdep update;
 echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc;
@@ -21,10 +22,11 @@ PCL-1.8.0 is provided for ubuntu 14.04.
 Ps: The library of this version is important for our ros package.
 !
 mkdir build;
-wget https://github.com/PointCloudLibrary/pcl/archive/pcl-1.8.0.tar.gz
 cd ./build;
+wget https://github.com/PointCloudLibrary/pcl/archive/pcl-1.8.0.tar.gz
 tar -zvxf pcl-1.8.0.tar.gz;
 cd ./pcl-pcl-1.8.0 && mkdir build && cd build;
+sudo apt-get install -y cmake;
 cmake ../;
 make && sudo make install;
 cd ../../../;

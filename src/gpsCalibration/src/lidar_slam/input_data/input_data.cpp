@@ -41,6 +41,8 @@ static double totalDistance[2];
 static double overlapDistance[2];
 static double totalDis = 0; 
 vector<string> bagList;   // bag path
+static unsigned long nMsgSendNum = 0;    //all sent messages number in one cycle
+static unsigned long nMsgLostNum = 0;    //all loss messages number in one cycle
 
 vector<std::string> tempTopics;  //message topic
 vector<sensor_msgs::PointCloud2> cloudTopics;
@@ -114,6 +116,7 @@ void subOdometryHandler(const nav_msgs::Odometry::ConstPtr& subOdometry)
     }
     else
     {
+        nMsgLostNum++;
         cout<<" WARN: publish message to loam,but not receive odometry"<<endl;
     }
 }
@@ -124,7 +127,7 @@ void readBagList(char *fileName,vector<string> &bagList)
     //open baglist.txt
     ifstream ifile;
     ifile.open(fileName);
-    if(NULL==ifile)
+    if(!ifile.is_open())
     {
         printf("ERROR: open %s error,please check it\n",fileName);
         exit(0);
@@ -180,6 +183,24 @@ long totalMessageNumber(vector<string> bagList,vector<long> &messageNumber)
     return totalNum;
 }
 
+/*
+*show message sent number,message loss number,message loss rate infomation
+*/
+void showMessageHandleResult()
+{
+    if (0 != nMsgSendNum)
+    {
+        float rate = (nMsgLostNum * 100) / nMsgSendNum;
+        if (rate < 0.01)
+        {
+            printf("[INFO]In one cycle,send message:%lu,lost message:%lu,message loss rate < 0.01%%\n", nMsgSendNum, nMsgLostNum);
+        }
+        else
+        {
+            printf("[INFO]In one cycle,send message:%lu,lost message:%lu,message loss rate:%.2f%%\n", nMsgSendNum, nMsgLostNum, rate);
+        }
+    }
+}
 
 int main(int argc, char **argv)  
 {
@@ -239,6 +260,8 @@ int main(int argc, char **argv)
         long messageIndex = 0;
         bagIndex = 0;
         totalDis = 0;
+        nMsgSendNum = 0;
+        nMsgLostNum = 0;
 
         //init IMControl message
         gpsCalibration::IMControl controlMsg;
@@ -289,6 +312,7 @@ int main(int argc, char **argv)
                     {
                         pubLaserCloud.publish(pointcloud2);        //publish message
                         messageIndex ++;
+                        nMsgSendNum++;
                         if(messageIndex % 50 == 0)
                         {
                             system("clear");
@@ -300,6 +324,9 @@ int main(int argc, char **argv)
                         if(totalDis > totalDistance[times])    // stop publish message
                         {
                             totalDis = 0;
+                            showMessageHandleResult();
+                            nMsgSendNum = 0;
+                            nMsgLostNum = 0;
                             end = 1;
                             break;
                         }
@@ -374,6 +401,7 @@ int main(int argc, char **argv)
                     {
                         pubLaserCloud.publish(pointcloud2);    // publish message
                         messageIndex++;
+                        nMsgSendNum++;
                         if(messageIndex % 50 == 0)
                         {
                             system("clear");
@@ -387,6 +415,7 @@ int main(int argc, char **argv)
                 readBag.close();
             }
         }
+        showMessageHandleResult();
         rate.sleep();
      
         if(!slamTrack.track.empty())
