@@ -1028,7 +1028,7 @@ void GPSPro::createJSON(string fileName,vector<pair<double,double> > GPSValue,in
 {
     ofstream ofile;
     ofile.open(fileName.c_str());
-    if(NULL == ofile)
+    if(!ofile.is_open())
     {
         printf("ERROR: open %s error.\n",fileName.c_str());
         exit(0);
