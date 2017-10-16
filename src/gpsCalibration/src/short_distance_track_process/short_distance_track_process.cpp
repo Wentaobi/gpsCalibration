@@ -230,7 +230,7 @@ int main(int argc,char **argv)
         string originalKMLFileName= argv[4];
         string improveKMLFileName= argv[5];
 
-        cout << "==================== Create original GPS KML ====================" << endl;
+        cout << "====================  Create original GPS KML  ====================" << endl;
         gpsProcess.ENUToGPS(gps, WGSBL, altitude, segmentColor);
         gpsProcess.createKML(originalKMLFileName, WGSBL, altitude, 0, segmentColor);
         WGSBL.clear();
@@ -241,7 +241,7 @@ int main(int argc,char **argv)
         gpsProcess.ENUToGPS(ENUCoorVector, WGSBL, altitude, segmentColor);
         gpsProcess.createKML(improveKMLFileName, WGSBL, altitude, 1, segmentColor);
 
-        cout << "==================== END ====================" << endl;
+        cout << "====================            END            ====================" << endl;
     }
     else if(2==KMLControl)      // publish GPS track message
     {
