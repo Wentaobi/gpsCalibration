@@ -32,9 +32,17 @@ class GPSPro
         void setMethod(string method);    // set transform method
         string getGPSPath();      // get original gps file path
         void setGPSPath(string originalGPSPath);    // set original gps file path
+        int GPSToGCJ (vector<pair<double, double> > vecGpsCoor, vector<pair<double, double> >& vecGCJ);// GPS coordinate transform to GCJ coordinate
+        int GCJToBD(vector<pair<double, double> > vecGCJCoor, vector<pair<double, double> >& vecBD);    // GCJ coordinate transform to BD coordinate
+
+        int BDToGCJ (vector<pair<double, double> > vecBDCoor, vector<pair<double, double> >& vecGCJ);// BD coordinate transform to BD coordinate
+
+
+
         int ENUToGPS(vector<COORDXYZTW> enuCoor,vector<pair<double,double> > &WGSBL,vector<double> &altitude,vector<pair<int,string> > &segmentColor);   // ENU coordinate transform to GPS coordinate
         vector<COORDXYZT> GPSToENU(vector<COORDXYZT> slamTrack);   // GPS coordinate transform to ENU coordinate
         int createKML(string KMLFileName,vector<pair<double,double> > WGSBL,vector<double> altitude,int flag,vector<pair<int,string> > segmentColor);   // write KML file
+        void createJSON(string fileName,vector<pair<double,double> > GPSValue,int flag,vector<pair<int,string> > segmentColor);
         ~GPSPro();
     private:
         int type;              // type 3 or 6
@@ -53,5 +61,40 @@ class GPSPro
         vector<string> readKMLParameter();   // read KML config parameter
         vector<pair<int,string> > segment(vector<COORDXYZTW> enuCoor);   // GPS segment
         string rgbColor(double w,double distance);   // calculate RGB color
+
+        bool outOfChina (double lat, double lon);
+
+        double transformLat (double x, double y);   // transform lat
+        double transformLon (double x, double y);   // transform lon
+
+        /**
+         * GPS ===> GCJ02 
+         *                               
+         * @param lGpsLat
+         * @param lGpsLon
+         *                                                                               * lGcjLat, lGcjLon 
+         */
+         void transform2Mars (double lGpsLat, double lGpsLon, double &lGcjLat, double &lGcjLon);
+
+        /**
+         * GCJ02 ===> BD09
+         *
+         * @param lGcjLat
+         * @param lGcjLon
+         *
+         * @param lBdLat lBdLon
+         */
+         void bd_encrypt (double lGcjLat, double lGcjLon, double& lBdLat, double& lBdLon);
+
+        /**
+         * BD09 ===> GCJ02
+         *
+         * @param lBdLat
+         * @param lBdLon
+         *
+         * @param lGcjLat lGcjLon
+         */
+         void bd_decrypt (double lBdLat, double lBdLon, double& lGcjLat, double& lGcjLon);
+
 };
 #endif

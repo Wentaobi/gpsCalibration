@@ -418,7 +418,7 @@ int main(int argc, char **argv)
         showMessageHandleResult();
         rate.sleep();
      
-        if(0 != slamTrack.track.size())
+        if(!slamTrack.track.empty())
         {
             slamTrack.track_flag = times;
             slamTrackVector.push(slamTrack);

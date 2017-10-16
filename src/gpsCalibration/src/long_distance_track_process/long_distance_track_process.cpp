@@ -40,47 +40,50 @@ void merge(vector<COORDXYZT> localCoor,vector<double> weightCoe)
 
 void longDisTrackPro(const gpsCalibration::IMTrack::ConstPtr& msg)
 {
-    if(msg->track.empty())
+    if(0 == msg->track_flag)
     {
-        if(totalTrack.empty())
+        if(msg->track.empty())
         {
-            cout << "WARN: no GPS track,please check it" << endl;
-            exit(-1);
+            if(totalTrack.empty())
+            {
+                cout << "WARN: no GPS track,please check it" << endl;
+                exit(-1);
+            }
+            msgWithWeight = fromCOORDXYZTWtoIMTrack(totalTrack);      // convert GPS track to GPS track message
+            data_pub2.publish(msgWithWeight);               // publish total GPS track to short_distance_track_process_node
         }
-        msgWithWeight = fromCOORDXYZTWtoIMTrack(totalTrack);      // convert GPS track to GPS track message
-        data_pub2.publish(msgWithWeight);               // publish total GPS track to short_distance_track_process_node
-    }
-    else
-    {
-        vector<COORDXYZT> SLAMTrackTmp = fromIMTracktoCOORDXYZT(msg);   // slam track message convert to slam track
-        WeightCoeCal wcca;
-        vector<double> weightCoe;
-        wcca.ICPWeightCoeCal(SLAMTrackTmp,weightCoe);      // calculate weight according to car speed 
-
-        vector<COORDXYZT> localCoor = gpsProcess.GPSToENU(SLAMTrackTmp);     // return ENUgps coordinate,this will be used ICP
-
-        //construct icp class to complete match
-        trackCalibration trackICPHandle(SLAMTrackTmp,localCoor,weightCoe);
-        trackICPHandle.doICP();
-        //get ICP result
-        vector<COORDXYZT> proENUTrack;
-        trackICPHandle.doCalibration(proENUTrack);
-
-        // iteration
-        for(int i = 1; i <= MAXITERATOR; i ++)
+        else
         {
-            weightCoe.clear();
+            vector<COORDXYZT> SLAMTrackTmp = fromIMTracktoCOORDXYZT(msg);   // slam track message convert to slam track
+            WeightCoeCal wcca;
+            vector<double> weightCoe;
+            wcca.ICPWeightCoeCal(SLAMTrackTmp,weightCoe);      // calculate weight according to car speed 
 
-            wcca.ICPWeightCoeCal(SLAMTrackTmp,weightCoe,localCoor,proENUTrack);   // update weight according to ICP
+            vector<COORDXYZT> localCoor = gpsProcess.GPSToENU(SLAMTrackTmp);     // return ENUgps coordinate,this will be used ICP
 
-            trackCalibration trackICPHandle2(proENUTrack,localCoor,weightCoe);
-            proENUTrack.clear();
-            trackICPHandle2.doICP();
-            trackICPHandle2.doCalibration(proENUTrack);           // get ICP result
+            //construct icp class to complete match
+            trackCalibration trackICPHandle(SLAMTrackTmp,localCoor,weightCoe);
+            trackICPHandle.doICP();
+            //get ICP result
+            vector<COORDXYZT> proENUTrack;
+            trackICPHandle.doCalibration(proENUTrack);
+
+            // iteration
+            for(int i = 1; i <= MAXITERATOR; i ++)
+            {
+                weightCoe.clear();
+
+                wcca.ICPWeightCoeCal(SLAMTrackTmp,weightCoe,localCoor,proENUTrack);   // update weight according to ICP
+
+                trackCalibration trackICPHandle2(proENUTrack,localCoor,weightCoe);
+                proENUTrack.clear();
+                trackICPHandle2.doICP();
+                trackICPHandle2.doCalibration(proENUTrack);           // get ICP result
+            }
+            merge(localCoor,weightCoe);       // merge slam track
+            SLAMTrackTmp.clear();
+
         }
-        merge(localCoor,weightCoe);       // merge slam track
-        SLAMTrackTmp.clear();
-
     }
 }
 

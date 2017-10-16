@@ -21,6 +21,12 @@
 #define IMTHREEBANDS 3
 #define IMSIXBANDS 6
 
+#define LongAxis 6378245.0
+#define ShortAxis 6356863.0188
+#define X_PI 3.1415926535897932384626 * 3000.0 / 180.0
+
+static double ee = (LongAxis * LongAxis - ShortAxis * ShortAxis) / (LongAxis * LongAxis);
+
 using namespace std;
 
 typedef struct

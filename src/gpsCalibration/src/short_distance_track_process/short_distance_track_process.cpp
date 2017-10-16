@@ -140,6 +140,7 @@ void GPSWithWeightHandle(const gpsCalibration::IMTrackPtr& GPSWithWeight)
         exit(0);
     }
     gps = fromIMTracktoCOORDXYZTW(GPSWithWeight);        // GPS track message convert to GPS track
+    cout << "gps.size() = " << gps.size() << endl;
 }
 
 void slamTrackHandle(const gpsCalibration::IMTrackPtr& slamTrack)
@@ -178,9 +179,9 @@ int main(int argc,char **argv)
     int type = atoi(argv[2]);
     int KMLControl = atoi(argv[3]);
 
-    vector<pair<double,double> > WGSBL;
-    vector<double> altitude;
-    vector<pair<int,string> > segmentColor;
+    vector<pair<double,double> > oriWGSBL,impWGSBL;
+    vector<double> oriAltitude,impAltitude;
+    vector<pair<int,string> > oriSegmentColor,impSegmentColor;
     GPSPro gpsProcess;
     gpsProcess.setMethod(method);
     gpsProcess.setType(type);
@@ -221,9 +222,48 @@ int main(int argc,char **argv)
 
     if(timetodie)
     {
-        //cout << "got ctrl-c signal." << endl;
         return 1;
     }
+
+    gpsProcess.ENUToGPS(gps,oriWGSBL,oriAltitude,oriSegmentColor);
+    gpsProcess.ENUToGPS(ENUCoorVector,impWGSBL,impAltitude,impSegmentColor);
+
+    cout << "oriWGSBL.size() = " << oriWGSBL.size() << endl;
+
+    if(4==KMLControl)
+    {
+        string oriJSONFileName = argv[4];
+        string impJSONFileName = argv[5];
+        vector<pair<double,double> > GCJ02;
+
+        gpsProcess.GPSToGCJ(oriWGSBL,GCJ02);
+        gpsProcess.createJSON(oriJSONFileName,GCJ02,0,oriSegmentColor);
+
+        GCJ02.clear();
+
+        gpsProcess.GPSToGCJ(impWGSBL,GCJ02);
+        gpsProcess.createJSON(impJSONFileName,GCJ02,1,impSegmentColor);     // Gaode map
+    }
+
+
+    if(3==KMLControl)
+    {
+        string oriJSONFileName = argv[4];
+        string impJSONFileName = argv[5];
+        vector<pair<double,double> > GCJ02,BD09;
+
+        gpsProcess.GPSToGCJ(oriWGSBL,GCJ02);
+        gpsProcess.GCJToBD(GCJ02,BD09);
+        gpsProcess.createJSON(oriJSONFileName,BD09,0,oriSegmentColor);
+
+        GCJ02.clear();
+        BD09.clear();
+
+        gpsProcess.GPSToGCJ(impWGSBL,GCJ02);
+        gpsProcess.GCJToBD(GCJ02,BD09);
+        gpsProcess.createJSON(impJSONFileName,BD09,1,impSegmentColor);     //Baidu map
+    }
+
 
     if(1==KMLControl)     // create KML file
     {
@@ -231,27 +271,24 @@ int main(int argc,char **argv)
         string improveKMLFileName= argv[5];
 
         cout << "====================  Create original GPS KML  ====================" << endl;
-        gpsProcess.ENUToGPS(gps, WGSBL, altitude, segmentColor);
-        gpsProcess.createKML(originalKMLFileName, WGSBL, altitude, 0, segmentColor);
-        WGSBL.clear();
-        altitude.clear();
-        segmentColor.clear();
+        gpsProcess.createKML(originalKMLFileName, oriWGSBL, oriAltitude, 0, oriSegmentColor);
 
         cout << "==================== Create calibrated GPS KML ====================" << endl;
-        gpsProcess.ENUToGPS(ENUCoorVector, WGSBL, altitude, segmentColor);
-        gpsProcess.createKML(improveKMLFileName, WGSBL, altitude, 1, segmentColor);
+        gpsProcess.createKML(improveKMLFileName, impWGSBL, impAltitude, 1, impSegmentColor);
 
         cout << "====================            END            ====================" << endl;
+        
+
     }
     else if(2==KMLControl)      // publish GPS track message
     {
         gpsCalibration::IMMessage msgForUser;
         gpsCalibration::IMGPS msgTemp;
 
-        for(int i= 0; i< WGSBL.size(); i++) 
+        for(int i= 0; i< impWGSBL.size(); i++) 
         {
-            msgTemp.b= WGSBL[i].first;
-            msgTemp.l= WGSBL[i].second;
+            msgTemp.l= impWGSBL[i].first;
+            msgTemp.b= impWGSBL[i].second;
             msgTemp.w= ENUCoorVector[i].w;
             msgForUser.track.push_back(msgTemp);
         }

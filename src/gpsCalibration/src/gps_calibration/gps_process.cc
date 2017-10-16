@@ -338,6 +338,82 @@ vector<COORDXYZT> GPSPro::GPSToENU(vector<COORDXYZT> slamTrack)
     return localCoor;
 }
 
+/**
+ *  GPS ==> GCJ02
+  */
+int GPSPro::GPSToGCJ (vector<pair<double, double> > vecGpsCoor, vector<pair<double, double> >& vecGCJ)
+{
+    if (0 >= vecGpsCoor.size ())
+    {
+        cout << "GPS data NULL" << endl;
+        return -1;
+    }
+
+    double lGCJLat = 0;
+    double lGCJLon = 0;
+
+    for (int i=0; i<vecGpsCoor.size(); ++i)
+    {
+        transform2Mars (vecGpsCoor[i].second, vecGpsCoor[i].first, lGCJLon, lGCJLat);
+        vecGCJ.push_back(pair<double, double>(lGCJLat, lGCJLon));
+    }
+
+    return 0;
+}
+
+
+
+
+
+/**
+  *   GCJ02 ==> BD09
+  */
+int GPSPro::GCJToBD (vector<pair<double, double> > vecGCJCoor, vector<pair<double, double> >&vecBD)
+{
+    if (0 >= vecGCJCoor.size ())
+    {
+        cout << "GCJ02 data NULL " << endl;
+        return -1;
+    }
+
+    double lBDLat = 0;
+    double lBDLon = 0;
+    for (int i=0; i<vecGCJCoor.size (); ++i)
+    {
+        bd_encrypt (vecGCJCoor[i].second, vecGCJCoor[i].first, lBDLon, lBDLat);
+        vecBD.push_back (pair<double, double>(lBDLat, lBDLon));
+    }
+    return 0;
+}
+
+
+
+
+/**
+  *  BD09 ==> GCJ02
+  */
+int GPSPro::BDToGCJ (vector<pair<double, double> > vecBDCoor, vector<pair<double, double> >&vecGCJ)
+{
+    if (0 >= vecBDCoor.size ())
+    {
+        cout << "BD09 data NULL" << endl;
+        return -1;
+    }
+
+    double lGCJLat = 0;
+    double lGCJLon = 0;
+
+    for (int i=0; i<vecBDCoor.size (); ++i)
+    {
+        bd_decrypt (vecBDCoor[i].second, vecBDCoor[i].first, lGCJLon, lGCJLat);
+
+        vecGCJ.push_back(pair<double, double>(lGCJLat, lGCJLon));
+    }
+    return 0;
+}
+
+
+
 /*GPS segment*/
 vector<pair<int,string> > GPSPro::segment(vector<COORDXYZTW> enuCoor)
 {
@@ -494,7 +570,7 @@ string GPSPro::rgbColor(double w,double distance)
     string bString(buf);
     bzero(buf,sizeof(buf));
     
-    return "7f" + rString + gString + bString;
+    return rString + gString + bString;
 }
 
 /*write KML file*/
@@ -536,7 +612,7 @@ int GPSPro::createKML(string KMLFileName,vector<pair<double,double> > WGSBL,vect
         ofile<<"<coordinates>"<<endl;
         for(int i = 0; i < WGSBL.size() && i < altitude.size(); i++)
         {
-            ofile<<WGSBL[i].second<<','<<WGSBL[i].first<<','<<altitude[i]<<endl;
+            ofile<<WGSBL[i].first<<','<<WGSBL[i].second<<','<<altitude[i]<<endl;
         }
         ofile<<"</coordinates>"<<endl;
         ofile<<"</LineString></Placemark>"<<endl;
@@ -557,7 +633,7 @@ int GPSPro::createKML(string KMLFileName,vector<pair<double,double> > WGSBL,vect
             index = 0;
             ofile<<"<Style id=\""<<configParameter[index++]<<"\">"<<endl;
             ofile<<"<LineStyle>"<<endl;
-            ofile<<"<color>"<<segmentColor[i].second<<"</color>"<<endl;
+            ofile<<"<color>"<< ("7f" + segmentColor[i].second ) <<"</color>"<<endl;
             ofile<<"<width>"<<configParameter[index++]<<"</width>"<<endl;
             ofile<<"</LineStyle>"<<endl;
             ofile<<"<PolyStyle>"<<endl;
@@ -573,7 +649,7 @@ int GPSPro::createKML(string KMLFileName,vector<pair<double,double> > WGSBL,vect
             ofile<<"<coordinates>"<<endl;
             for(;indexCoor < segmentColor[i].first && index < altitude.size(); indexCoor ++)
             {
-                ofile<<WGSBL[indexCoor].second<<','<<WGSBL[indexCoor].first<<','<<altitude[indexCoor]<<endl;
+                ofile<<WGSBL[indexCoor].first<<','<<WGSBL[indexCoor].second<<','<<altitude[indexCoor]<<endl;
             }
             ofile<<"</coordinates>"<<endl;
             ofile<<"</LineString></Placemark>"<<endl;
@@ -685,7 +761,7 @@ int GPSPro::GaussionReverseTransform(vector<COORDXYZTW> localCoor,vector<pair<do
 
         latitude = latitude * 180 / PI;     //The radians are converted to angles
 
-        WGSBL.push_back(pair<double,double>(latitude,longitude));
+        WGSBL.push_back(pair<double,double>(longitude,latitude));
         altitude.push_back(localCoor[index].z);
     }
 }
@@ -791,7 +867,7 @@ int GPSPro::UTMReverseTransform(vector<COORDXYZTW> localCoor,vector<pair<double,
 
         latitude = latitude * 180 / PI;              //The radians are converted to angles
 
-        WGSBL.push_back(pair<double,double>(latitude,longitude));
+        WGSBL.push_back(pair<double,double>(longitude,latitude));
         altitude.push_back(localCoor[index].z);
     }
 
@@ -860,4 +936,132 @@ WGSParameter::WGSParameter()
 
 
 WGSParameter::~WGSParameter()
-{}
+{
+}
+
+
+
+bool GPSPro::outOfChina (double lat, double lon)
+{
+    if (lon < 72.004 || lon > 137.8347)
+    {
+        return true;
+    }
+    if (lat < 0.8293 || lat > 55.8271)
+    {
+        return true;
+    }
+        return false;
+}
+
+// transform lat
+double GPSPro::transformLat (double x, double y)
+{
+    double ret = -100.0 + 2.0 * x + 3.0 * y + 0.2 * y * y + 0.1 * x * y + 0.2 * sqrt(abs(x));
+    ret += (20.0 * sin(6.0 * x * PI) + 20.0 * sin(2.0 * x * PI)) * 2.0 / 3.0;
+    ret += (20.0 * sin(y * PI) + 40.0 * sin(y / 3.0 * PI)) * 2.0 / 3.0;
+    ret += (160.0 * sin(y / 12.0 * PI) + 320 * sin(y * PI / 30.0)) * 2.0 / 3.0;
+    return ret;
+}
+
+// transform lon
+double GPSPro::transformLon (double x, double y)
+{
+    double ret = 300.0 + x + 2.0 * y + 0.1 * x * x + 0.1 * x* y + 0.1 * sqrt(abs(x));
+    ret += (20.0 * sin(6.0 * x * PI) + 20.0 * sin(2.0 * x * PI)) * 2.0 / 3.0;
+    ret += (20.0 * sin(x * PI) + 40.0 * sin(x / 3.0 * PI)) * 2.0 / 3.0;
+    ret += (150.0 * sin(x / 12.0 * PI) + 300.0 * sin(x / 30.0 * PI)) * 2.0 / 3.0;
+        return ret;
+}
+
+// GPS ==> GCJ02
+void GPSPro::transform2Mars (double lGpsLat, double lGpsLon, double &lGcjLat, double &lGcjLon)
+{
+    if (outOfChina (lGpsLat, lGpsLon))
+    {
+        lGcjLat = lGpsLat;
+        lGcjLon = lGpsLon;
+        return;
+    }
+    double dLat = transformLat(lGpsLon - 105.0, lGpsLat - 35.0);
+    double dLon = transformLon(lGpsLon - 105.0, lGpsLat - 35.0);
+    double radLat = lGpsLat / 180.0 * PI;
+    double magic = sin (radLat);
+    magic = 1 - ee * magic * magic;
+    double sqrtMagic = sqrt (magic);
+    dLat = (dLat * 180.0) / ((LongAxis * (1-ee)) / (magic * sqrtMagic) * PI);
+    dLon = (dLon * 180.0) / (LongAxis / sqrtMagic * cos(radLat) * PI);
+    lGcjLat = lGpsLat + dLat;
+    lGcjLon = lGpsLon + dLon;
+}
+
+
+// GCJ02 ==> BD09
+void GPSPro::bd_encrypt (double lGcjLat, double lGcjLon, double& lBdLat, double& lBdLon)
+{
+    double x = lGcjLon;
+    double y = lGcjLat;
+    double z = sqrt(x * x + y * y) + 0.00002 * sin (y * X_PI);
+
+    double theta = atan2 (y, x) + 0.000003 * cos (x * X_PI);
+
+    lBdLon = z * cos(theta) + 0.0065;
+    lBdLat = z * sin(theta) + 0.006;
+    
+}
+
+// BD09 ==> GCJ02
+void GPSPro::bd_decrypt (double lBdLat, double lBdLon, double& lGcjLat, double& lGcjLon)
+{
+    double x = lBdLon - 0.0065;
+    double y = lBdLat - 0.006;
+    double z = sqrt (x * x + y * y) - 0.00002 * sin (y * X_PI);
+
+    double theta = atan2 (y, x) - 0.000003 * cos (x * X_PI);
+
+    lGcjLon = z * cos (theta);
+    lGcjLat = z * sin (theta);
+}
+
+
+void GPSPro::createJSON(string fileName,vector<pair<double,double> > GPSValue,int flag,vector<pair<int,string> > segmentColor)
+{
+    ofstream ofile;
+    ofile.open(fileName.c_str());
+    if(!ofile.is_open())
+    {
+        printf("ERROR: open %s error.\n",fileName.c_str());
+        exit(0);
+    }
+    ofile.precision(15);
+
+    int index = 0;
+
+    if(0 == flag)
+    {
+        ofile << "[";
+        ofile << "{\"line\":[";
+        for(;index < GPSValue.size(); index ++)
+        {
+            ofile << "[" << GPSValue[index].first << "," << GPSValue[index].second << "],";
+        }
+        ofile << "],\"color\":\"" << "FF00FF" << "\"}";
+        ofile << "]";
+    }
+    else
+    {
+        ofile << "[";
+        for(int colorIndex = 0; colorIndex < segmentColor.size(); colorIndex ++)
+        {
+            ofile << "{\"line\":[";
+            for(;index <= segmentColor[colorIndex].first; index ++)
+            {
+                ofile << "[" << GPSValue[index].first << "," << GPSValue[index].second << "],";
+            }
+            ofile << "],\"color\":\"" << segmentColor[colorIndex].second << "\"},";
+        }
+        ofile << "]";
+    }
+    ofile.close();
+    cout << "finished map" << endl;
+}
