@@ -39,6 +39,17 @@ class GPSPro
 
 
 
+
+
+		void getGPRMCFormat (char* buf, ifstream &ifile, vector<double> slamTrackTime, vector<pair<double, double> >&WGSBL, vector<double> &GPSTime);
+		void getGPGGAFormat (char* buf, ifstream &ifile, vector<double> slamTrackTime, vector<pair<double, double> >&WGSBL, vector<double> &GPSTime);
+		void getGPGLLFormat (char* buf, ifstream &ifile, vector<double> slamTrackTime, vector<pair<double, double> >&WGSBL, vector<double> &GPSTime);
+
+
+
+
+
+
         int ENUToGPS(vector<COORDXYZTW> enuCoor,vector<pair<double,double> > &WGSBL,vector<double> &altitude,vector<pair<int,string> > &segmentColor);   // ENU coordinate transform to GPS coordinate
         vector<COORDXYZT> GPSToENU(vector<COORDXYZT> slamTrack);   // GPS coordinate transform to ENU coordinate
         int createKML(string KMLFileName,vector<pair<double,double> > WGSBL,vector<double> altitude,int flag,vector<pair<int,string> > segmentColor);   // write KML file

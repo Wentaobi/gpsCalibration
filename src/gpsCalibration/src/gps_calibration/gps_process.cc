@@ -11,7 +11,7 @@ GPSPro::GPSPro()
 
 GPSPro::GPSPro(string &originalGPSPath,string &method,int &type)
 {
-    this->originalGPSPath = originalGPSPath;
+    originalGPSPath = originalGPSPath;
 
     if(method != "UTM" && method != "Gaussion")
     {
@@ -20,17 +20,17 @@ GPSPro::GPSPro(string &originalGPSPath,string &method,int &type)
     }
     else
     {
-        this->method = method;
+        method = method;
     }
 
     if(type != 3 && type != 6)
     {
         printf("type value is 3 or 6,the default value is 3\n");
-        this->type = 3;
+        type = 3;
     }
     else
     {
-        this->type = type;
+        type = type;
     }
 }
 
@@ -112,11 +112,7 @@ int GPSPro::interPolate(vector<pair<double,double> > LocalXY,vector<double> GPST
 int GPSPro::getGPS(string originalGPSPath,vector<double> slamTrackTime,vector<pair<double,double> > &WGSBL,vector<double> &GPSTime)
 {
     char buf[IMSDLEN];
-    double timestamp = 0;
-
-    double startTime = slamTrackTime[0]; 
-    double endTime = slamTrackTime[slamTrackTime.size()-1];
-
+	
     // open GPS text
     ifstream ifile;
     ifile.open(originalGPSPath.c_str());
@@ -127,8 +123,48 @@ int GPSPro::getGPS(string originalGPSPath,vector<double> slamTrackTime,vector<pa
     }
 
     //read GPS text and get GPS coordinate and GPS time
-    while(ifile.getline(buf,IMSDLEN) && timestamp < endTime + 1)
-    {
+
+	
+    ifile.getline(buf,IMSDLEN);
+	char tmpBuf[IMSDLEN];
+	memset (tmpBuf, 0, IMSDLEN);
+	strncpy (tmpBuf, buf, sizeof (buf));
+	char *p = strtok (tmpBuf, ",");
+	p = strtok (NULL, ",");
+
+	cout << "=====================================" << endl;
+	cout << p << endl;
+	cout << "=====================================" << endl;
+	if (0 == strcmp ("$GPRMC", p))
+	{
+		getGPRMCFormat (buf, ifile, slamTrackTime, WGSBL, GPSTime);
+	}
+	else if (0 == strcmp ("$GPGGA", p))
+	{
+		getGPGGAFormat (buf, ifile, slamTrackTime, WGSBL, GPSTime);
+	}
+	else if (0 == strcmp ("$GPGLL", p))
+	{
+		getGPGLLFormat (buf, ifile, slamTrackTime, WGSBL, GPSTime);
+	}
+	else 
+	{
+		cout << "The current version does not support the current GPS format" << endl;
+	}
+
+
+
+    ifile.close();
+    return 0;
+}
+
+void GPSPro::getGPRMCFormat (char* buf, ifstream &ifile, vector<double> slamTrackTime, vector<pair<double, double> >&WGSBL, vector<double> &GPSTime)
+{
+    double timestamp = 0;
+    double startTime = slamTrackTime[0]; 
+    double endTime = slamTrackTime[slamTrackTime.size()-1];
+
+    do {
         int column = 0;
         double latitude = 90,longitude = 180;
         timestamp = 0;
@@ -136,10 +172,13 @@ int GPSPro::getGPS(string originalGPSPath,vector<double> slamTrackTime,vector<pa
         while(splite)
         {
             column ++ ;
-            if(4 == column && !strcmp("V",splite))      // the forth is 'A' or 'V'; if 'V', no GPS signal
+            
+			if(4 == column && !strcmp("V",splite))      // the forth is 'A' or 'V'; if 'V', no GPS signal
             {
                 break;
             }
+
+
             switch(column)
             {
                 case 1:                              // the first column is timestamp
@@ -185,11 +224,147 @@ int GPSPro::getGPS(string originalGPSPath,vector<double> slamTrackTime,vector<pa
             WGSBL.push_back(pair<double,double>(latitude,longitude));
             GPSTime.push_back(timestamp);
         }
-    }
-    ifile.close();
-    return 0;
+    }while(ifile.getline(buf,IMSDLEN) && timestamp < endTime + 1);
+	
 }
 
+void GPSPro::getGPGGAFormat (char* buf, ifstream &ifile, vector<double> slamTrackTime, vector<pair<double, double> >&WGSBL, vector<double> &GPSTime)
+{
+    double timestamp = 0;
+    double startTime = slamTrackTime[0]; 
+    double endTime = slamTrackTime[slamTrackTime.size()-1];
+
+    do {
+        int column = 0;
+        double latitude = 90,longitude = 180;
+        timestamp = 0;
+        char *splite = strtok(buf,",");
+        while(splite)
+        {
+            column ++ ;
+
+			if (8 == column && (0 == strcmp ("0", splite) || 0 == strcmp ("3", splite)))
+			{
+				break;
+			}
+            
+            switch(column)
+            {
+                case 1:                              // the first column is timestamp
+                {
+                    timestamp = atof(splite);   
+                    break;
+                }
+                case 4:                         // the fifth column is latitude(ddmm.mmmm)
+                {
+                    int tmp = atof(splite) / 100;
+                    latitude = tmp + (atof(splite) - tmp * 100) / 60.0;
+                    break;
+                }
+                case 5:                         // the sixth column is 'N' or 'S'; if 'S', latitude is negative
+                {
+                    if(!strcmp("S",splite))
+                    {
+                        latitude = 0 - latitude;
+                    }
+                    break;
+                }
+                case 6:                         // the seventh column is longitude(dddmm.mmmm)
+                {
+                    int tmp = atof(splite) / 100;
+                    longitude = tmp + (atof(splite) - tmp * 100) / 60.0;
+                    break;
+                }
+                case 7:                         // the eighth column is 'W' or 'E'; if 'W', longitude is negative
+                {
+                    if(!strcmp("W",splite))
+                    {
+                        longitude = 0 - longitude;
+                    }
+                    break;
+                }
+            }
+            splite = strtok(NULL,",");
+        }
+        splite = NULL;
+
+        if((long)timestamp >= (long)(startTime - 1) && (long)timestamp <= (long)(endTime + 1))
+        {
+            WGSBL.push_back(pair<double,double>(latitude,longitude));
+            GPSTime.push_back(timestamp);
+        }
+    }while(ifile.getline(buf,IMSDLEN) && timestamp < endTime + 1);
+	
+}
+void GPSPro::getGPGLLFormat (char* buf, ifstream &ifile, vector<double> slamTrackTime, vector<pair<double, double> >&WGSBL, vector<double> &GPSTime)
+{
+    double timestamp = 0;
+    double startTime = slamTrackTime[0]; 
+    double endTime = slamTrackTime[slamTrackTime.size()-1];
+
+    do {
+        int column = 0;
+        double latitude = 90,longitude = 180;
+        timestamp = 0;
+        char *splite = strtok(buf,",");
+        while(splite)
+        {
+            column ++ ;
+            
+			if(8 == column && !strcmp("V",splite))      // the forth is 'A' or 'V'; if 'V', no GPS signal
+            {
+                break;
+            }
+
+
+            switch(column)
+            {
+                case 1:                              // the first column is timestamp
+                {
+                    timestamp = atof(splite);   
+                    break;
+                }
+                case 3:                         // the fifth column is latitude(ddmm.mmmm)
+                {
+                    int tmp = atof(splite) / 100;
+                    latitude = tmp + (atof(splite) - tmp * 100) / 60.0;
+                    break;
+                }
+                case 4:                         // the sixth column is 'N' or 'S'; if 'S', latitude is negative
+                {
+                    if(!strcmp("S",splite))
+                    {
+                        latitude = 0 - latitude;
+                    }
+                    break;
+                }
+                case 5:                         // the seventh column is longitude(dddmm.mmmm)
+                {
+                    int tmp = atof(splite) / 100;
+                    longitude = tmp + (atof(splite) - tmp * 100) / 60.0;
+                    break;
+                }
+                case 6:                         // the eighth column is 'W' or 'E'; if 'W', longitude is negative
+                {
+                    if(!strcmp("W",splite))
+                    {
+                        longitude = 0 - longitude;
+                    }
+                    break;
+                }
+            }
+            splite = strtok(NULL,",");
+        }
+        splite = NULL;
+
+        if((long)timestamp >= (long)(startTime - 1) && (long)timestamp <= (long)(endTime + 1))
+        {
+            WGSBL.push_back(pair<double,double>(latitude,longitude));
+            GPSTime.push_back(timestamp);
+        }
+    }while(ifile.getline(buf,IMSDLEN) && timestamp < endTime + 1);
+	
+}
 /* ENU coordinate transform to GPS coordinate*/
 int GPSPro::ENUToGPS(vector<COORDXYZTW> enuCoor,vector<pair<double,double> > &WGSBL,vector<double> &altitude,vector<pair<int,string> > &segmentColor)
 {
