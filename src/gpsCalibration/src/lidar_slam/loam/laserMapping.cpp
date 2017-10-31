@@ -46,6 +46,8 @@
 #include <tf/transform_datatypes.h>
 #include <tf/transform_broadcaster.h>
 
+bool systemInited = false;
+
 const float scanPeriod = 0.1;
 
 const int stackFrameNum = 1;
@@ -311,6 +313,10 @@ void laserCloudFullResHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloud
 
 void laserOdometryHandler(const nav_msgs::Odometry::ConstPtr& laserOdometry)
 {
+  if (abs(laserOdometry->pose.pose.position.x) < 0.000001 && abs(laserOdometry->pose.pose.position.y) < 0.000001 && abs(laserOdometry->pose.pose.position.z) < 0.000001)
+  {
+	systemInited = false;
+  }
   timeLaserOdometry = laserOdometry->header.stamp.toSec();
 
   double roll, pitch, yaw;
@@ -424,6 +430,35 @@ int main(int argc, char** argv)
       newLaserCloudSurfLast = false;
       newLaserCloudFullRes = false;
       newLaserOdometry = false;
+
+	if (!systemInited)
+	{
+		systemInited = true;
+		
+		isDegenerate = false;
+		pointSearchInd.clear();
+		pointSearchSqDis.clear();
+		for (int i = 0; i < laserCloudNum; i++) {
+		    laserCloudCornerArray[i].reset(new pcl::PointCloud<PointType>());
+		    laserCloudSurfArray[i].reset(new pcl::PointCloud<PointType>());
+		    laserCloudCornerArray2[i].reset(new pcl::PointCloud<PointType>());
+		    laserCloudSurfArray2[i].reset(new pcl::PointCloud<PointType>());
+ 		 }
+		frameCount = stackFrameNum - 1;
+		mapFrameCount = mapFrameNum - 1;
+		laserCloudCenWidth = 10;
+		laserCloudCenHeight = 5;
+		laserCloudCenDepth = 10;
+		
+		for (int i = 0; i < 6; i++)
+		{
+			//transformSum[i] = {0};
+			transformIncre[i] = {0};
+			transformTobeMapped[i] = {0};
+			transformBefMapped[i] = {0};
+			transformAftMapped[i] = {0};
+		}
+	}
 
       frameCount++;
       if (frameCount >= stackFrameNum) {

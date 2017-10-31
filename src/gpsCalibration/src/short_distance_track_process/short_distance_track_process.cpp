@@ -11,6 +11,12 @@
 #include "gpsCalibration/IMMessage.h"
 #include "gpsCalibration/IMGPS.h"
 
+//define output type
+#define GOOGLE_EARTH_FILE   1
+#define BAIDU_MAP_FILE      2
+#define GAODE_MAP_FILE      3
+#define PUBLISH_MESSAGE     4
+
 #define IMRATE 1.0
 
 using namespace std;
@@ -37,7 +43,7 @@ void getGPS(vector<COORDXYZT> slamTrack,vector<COORDXYZT> &slamWithGPS,vector<CO
     {
         if(i < slamTrack.size())
         {
-            if(gps[index].t == slamTrack[i].t)
+            if (abs(gps[index].t - slamTrack[i].t) < 0.000001)
             {
                 COORDXYZT temp;
                 temp.x = gps[index].x;
@@ -47,6 +53,7 @@ void getGPS(vector<COORDXYZT> slamTrack,vector<COORDXYZT> &slamWithGPS,vector<CO
                 GPSWithSlam.push_back(temp);
                 weight.push_back(gps[index].w);
                 slamWithGPS.push_back(slamTrack[i]);
+                i++;
             }
             else if(gps[index].t > slamTrack[i].t)
             {
@@ -65,7 +72,7 @@ void getGPS(vector<COORDXYZT> slamTrack,vector<COORDXYZT> &slamWithGPS,vector<CO
 // merge all short distance track
 void merge(vector<COORDXYZT> slamTrack,vector<double> weight)
 {
-    if(ENUCoorVector.size() == 0)
+    if(ENUCoorVector.empty())
     {
         for(int index = 0; index < slamTrack.size(); index ++)
         {
@@ -85,13 +92,18 @@ void merge(vector<COORDXYZT> slamTrack,vector<double> weight)
         double coe1 = 0.0,coe2 = 0.0;
         int smWindow = -1;
         int opNo = -1;
-        for(int index = 0; index < ENUCoorVector.size(); index ++)
+        vector<int> vec_lossPointIndex;
+        bool b_overlap = false; //find overlap segment flag
+        int nSize = ENUCoorVector.size();
+        for(int index = 0; index < nSize; index ++)
         {
             //overlap track merge
-            if(ENUCoorVector[index].t == slamTrack[indexTmp].t)
+            if (abs(ENUCoorVector[index].t - slamTrack[indexTmp].t) < 0.000001)
             {
-                if(-1 == opNo)
+                b_overlap = true;
+                if(-1 == opNo)  //first match
                 {
+                    vec_lossPointIndex.clear();
                     opNo = ENUCoorVector.size() - index;
                     smWindow = opNo / 2;
                 }
@@ -117,6 +129,14 @@ void merge(vector<COORDXYZT> slamTrack,vector<double> weight)
                 indexTmp ++;
                 num ++;
             }
+            else
+            {
+                vec_lossPointIndex.push_back(index);
+            }
+        }
+        if (!b_overlap) //if not find overlap segment, avoid remove all
+        {
+            vec_lossPointIndex.clear();
         }
         for(;indexTmp < slamTrack.size(); indexTmp ++)
         {
@@ -127,6 +147,12 @@ void merge(vector<COORDXYZT> slamTrack,vector<double> weight)
             temp.t = slamTrack[indexTmp].t;
             temp.w = weight[indexTmp];
             ENUCoorVector.push_back(temp);
+        }
+        while (!vec_lossPointIndex.empty())
+        {
+            int index = vec_lossPointIndex.back();
+            vec_lossPointIndex.pop_back();
+            ENUCoorVector.erase(ENUCoorVector.begin() + index);
         }
     }
 }
@@ -230,70 +256,65 @@ int main(int argc,char **argv)
 
     cout << "oriWGSBL.size() = " << oriWGSBL.size() << endl;
 
-    if(4==KMLControl)
+    string originalGPSFileName= argv[4];
+    string calibratedGPSFileName= argv[5];
+    switch (KMLControl)
     {
-        string oriJSONFileName = argv[4];
-        string impJSONFileName = argv[5];
-        vector<pair<double,double> > GCJ02;
-
-        gpsProcess.GPSToGCJ(oriWGSBL,GCJ02);
-        gpsProcess.createJSON(oriJSONFileName,GCJ02,0,oriSegmentColor);
-
-        GCJ02.clear();
-
-        gpsProcess.GPSToGCJ(impWGSBL,GCJ02);
-        gpsProcess.createJSON(impJSONFileName,GCJ02,1,impSegmentColor);     // Gaode map
-    }
-
-
-    if(3==KMLControl)
-    {
-        string oriJSONFileName = argv[4];
-        string impJSONFileName = argv[5];
-        vector<pair<double,double> > GCJ02,BD09;
-
-        gpsProcess.GPSToGCJ(oriWGSBL,GCJ02);
-        gpsProcess.GCJToBD(GCJ02,BD09);
-        gpsProcess.createJSON(oriJSONFileName,BD09,0,oriSegmentColor);
-
-        GCJ02.clear();
-        BD09.clear();
-
-        gpsProcess.GPSToGCJ(impWGSBL,GCJ02);
-        gpsProcess.GCJToBD(GCJ02,BD09);
-        gpsProcess.createJSON(impJSONFileName,BD09,1,impSegmentColor);     //Baidu map
-    }
-
-
-    if(1==KMLControl)     // create KML file
-    {
-        string originalKMLFileName= argv[4];
-        string improveKMLFileName= argv[5];
-
-        cout << "====================  Create original GPS KML  ====================" << endl;
-        gpsProcess.createKML(originalKMLFileName, oriWGSBL, oriAltitude, 0, oriSegmentColor);
-
-        cout << "==================== Create calibrated GPS KML ====================" << endl;
-        gpsProcess.createKML(improveKMLFileName, impWGSBL, impAltitude, 1, impSegmentColor);
-
-        cout << "====================            END            ====================" << endl;
-        
-
-    }
-    else if(2==KMLControl)      // publish GPS track message
-    {
-        gpsCalibration::IMMessage msgForUser;
-        gpsCalibration::IMGPS msgTemp;
-
-        for(int i= 0; i< impWGSBL.size(); i++) 
+        case GOOGLE_EARTH_FILE:                                                             // create Google Earth KML file
         {
-            msgTemp.l= impWGSBL[i].first;
-            msgTemp.b= impWGSBL[i].second;
-            msgTemp.w= ENUCoorVector[i].w;
-            msgForUser.track.push_back(msgTemp);
+            cout << "====================  Create original GPS KML  ====================" << endl;
+            gpsProcess.createKML(originalGPSFileName, oriWGSBL, oriAltitude, 0, oriSegmentColor);
+            cout << "==================== Create calibrated GPS KML ====================" << endl;
+            gpsProcess.createKML(calibratedGPSFileName, impWGSBL, impAltitude, 1, impSegmentColor);
+            cout << "====================            END            ====================" << endl;
+            break;
         }
-        cout << "==================== Start to publish calibrated gps ====================" << endl;
-        IMCalibratedGPS.publish(msgForUser);
+        case BAIDU_MAP_FILE:                                                             //create Baidu Map file
+        {
+            vector<pair<double,double> > GCJ02,BD09;
+            gpsProcess.GPSToGCJ(oriWGSBL,GCJ02);
+            gpsProcess.GCJToBD(GCJ02,BD09);
+            gpsProcess.createJSON(originalGPSFileName,BD09,0,oriSegmentColor);
+            GCJ02.clear();
+            BD09.clear();
+            gpsProcess.GPSToGCJ(impWGSBL,GCJ02);
+            gpsProcess.GCJToBD(GCJ02,BD09);
+            gpsProcess.createJSON(calibratedGPSFileName,BD09,1,impSegmentColor); 
+            break;
+        }
+        case GAODE_MAP_FILE:                                                             //create Gaode Map file
+        {
+            vector<pair<double,double> > GCJ02;
+            gpsProcess.GPSToGCJ(oriWGSBL,GCJ02);
+            gpsProcess.createJSON(originalGPSFileName,GCJ02,0,oriSegmentColor);
+            GCJ02.clear();
+            gpsProcess.GPSToGCJ(impWGSBL,GCJ02);
+            gpsProcess.createJSON(calibratedGPSFileName,GCJ02,1,impSegmentColor); 
+            break;
+        }
+        case PUBLISH_MESSAGE:                                                             // publish GPS track message
+        {
+            gpsCalibration::IMMessage msgForUser;
+            gpsCalibration::IMGPS msgTemp;
+            for(int i= 0; i< impWGSBL.size(); i++)
+            {
+                msgTemp.l= impWGSBL[i].first;
+                msgTemp.b= impWGSBL[i].second;
+                msgTemp.w= ENUCoorVector[i].w;
+                msgForUser.track.push_back(msgTemp);
+            }
+            cout << "==================== Start to publish calibrated gps ====================" << endl;
+            IMCalibratedGPS.publish(msgForUser);
+            break;
+        }
+        default:
+        {
+            cout << "====================  Create original GPS KML  ====================" << endl;
+            gpsProcess.createKML(originalGPSFileName, oriWGSBL, oriAltitude, 0, oriSegmentColor);
+            cout << "==================== Create calibrated GPS KML ====================" << endl;
+            gpsProcess.createKML(calibratedGPSFileName, impWGSBL, impAltitude, 1, impSegmentColor);
+            cout << "====================            END            ====================" << endl;
+        }
     }
     
     return 0;

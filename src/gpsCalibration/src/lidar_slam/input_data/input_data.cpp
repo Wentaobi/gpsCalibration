@@ -33,13 +33,15 @@
 
 using namespace std;
 
+long g_lPublishedMsgNum = 0; //published message number in long or short track
+long g_lTotalMsgNum = 0; //all the bags message number
 int times = 0;
-int rowNum = 0;         // message index
-static int bagIndex = 0;     // bag index
+int g_nBagIndex = 0;     // bag index
+int g_nMsgIndex = 0;         // message index of each bag
 static int fileNum = 0;    // track index
-static double totalDistance[2];
-static double overlapDistance[2];
-static double totalDis = 0; 
+static double g_dSlamDistance[2];
+static double g_dOverlapDistance[2];
+static double g_dTotalDistane = 0; //total distance in one cycle
 vector<string> bagList;   // bag path
 static unsigned long nMsgSendNum = 0;    //all sent messages number in one cycle
 static unsigned long nMsgLostNum = 0;    //all loss messages number in one cycle
@@ -54,8 +56,8 @@ queue<gpsCalibration::IMTrack> slamTrackVector;
 
 struct DISTANCE
 {
-    int bagNum;
-    int row;
+    int nBagIndex;
+    int nMsgIndex;
     double distance;
     double timestamp;
 };
@@ -85,8 +87,8 @@ void subOdometryHandler(const nav_msgs::Odometry::ConstPtr& subOdometry)
         slamTrack.track.push_back(localCoor);
 
         DISTANCE tmpdis = {0,0,0,0};    // init tmpdis
-        tmpdis.bagNum = bagIndex;
-        tmpdis.row = rowNum;
+        tmpdis.nBagIndex = g_nBagIndex;
+        tmpdis.nMsgIndex = g_nMsgIndex;
         if(NULL == preOdometry)
         {
             tmpdis.distance = 0;
@@ -96,12 +98,12 @@ void subOdometryHandler(const nav_msgs::Odometry::ConstPtr& subOdometry)
             tmpdis.distance = sqrt(pow(subOdometry->pose.pose.position.x - preOdometry->pose.pose.position.x,2)
                               + pow(subOdometry->pose.pose.position.y - preOdometry->pose.pose.position.y,2)
                               + pow(subOdometry->pose.pose.position.z - preOdometry->pose.pose.position.z,2))
-                              + totalDis;
+                              + g_dTotalDistane;
         }
         tmpdis.timestamp = (double)subOdometry->header.stamp.toSec();
         preOdometry = subOdometry;    // update preOdometry
     
-        if(tmpdis.distance <= totalDistance[times] - overlapDistance[times])    //next publish message location
+        if(tmpdis.distance <= g_dSlamDistance[times] - g_dOverlapDistance[times])    //next publish message location
         {
             pubLocation = tmpdis;
         }
@@ -112,7 +114,7 @@ void subOdometryHandler(const nav_msgs::Odometry::ConstPtr& subOdometry)
                 allLocation.push_back(pubLocation);                  // push next publish message location into vector allLocation
             }
         }
-        totalDis = tmpdis.distance;
+        g_dTotalDistane = tmpdis.distance;
     }
     else
     {
@@ -145,13 +147,17 @@ void readBagList(char *fileName,vector<string> &bagList)
 
     if(bagList.empty())
     {
-        printf("WARN:%s is NULL,please check it.\n",fileName);
+         //published message number in long or short trackprintf("WARN:%s is NULL,please check it.\n",fileName);
         exit(0);
     }
 }
 
-
-long totalMessageNumber(vector<string> bagList,vector<long> &messageNumber)
+/******************************************************************************
+*Description: Get bag list infomation,include all bags message number and each
+*             bag message number
+*return:      all bags message number
+******************************************************************************/
+long getBagMessageInfo(vector<string> bagList,vector<long> &messageNumber)
 {
     long totalNum = 0;             // total message number
     long messageNumPerBag = 0;
@@ -202,15 +208,24 @@ void showMessageHandleResult()
     }
 }
 
+/*
+*show message publish infomation
+*/
+void showMessagePublishInfo()
+{
+    system("clear");
+    cout<<"***********************publish message***********************"<<endl;
+    printf("published %ld message,%ld message left,maybe %.1lf minites to publish\n",g_lPublishedMsgNum,g_lTotalMsgNum - g_lPublishedMsgNum,(g_lTotalMsgNum - g_lPublishedMsgNum) / IMRATE / 60.0);
+}
+
+/*
+argv[1]: baglist.txt path
+argv[2]: slam odometry path
+argv[3]: slam distance
+argv[4]: overlap slam distance
+*/
 int main(int argc, char **argv)  
 {
-    /*
-        argv[1]: baglist.txt path
-        argv[2]: slam odometry path
-        argv[3]: slam distance
-        argv[4]: overlap slam distance
-    */
-    
     if(6 > argc)
     {
         printf("ERROR: parameter error\n");
@@ -219,10 +234,10 @@ int main(int argc, char **argv)
     char *bagListPath = argv[1];
     if(atof(argv[2]) > atof(argv[3]) && atof(argv[3]) > atof(argv[4]) && atof(argv[4]) > 0)
     {
-        totalDistance[0] = atof(argv[2]);
-        overlapDistance[0] = 0;
-        totalDistance[1] = atof(argv[3]);
-        overlapDistance[1] = atof(argv[4]);
+        g_dSlamDistance[0] = atof(argv[2]);
+        g_dOverlapDistance[0] = 0;
+        g_dSlamDistance[1] = atof(argv[3]);
+        g_dOverlapDistance[1] = atof(argv[4]);
     }
     else
     {
@@ -239,7 +254,7 @@ int main(int argc, char **argv)
     readBagList(bagListPath,bagList);
 
     vector<long> messageNumber;             // message number per bag
-    long totalMessage = totalMessageNumber(bagList,messageNumber);   // total message number
+    g_lTotalMsgNum = getBagMessageInfo(bagList,messageNumber);   // total message number
 
     ros::Publisher pubLaserCloud = nh.advertise<sensor_msgs::PointCloud2>("/velodyne_points",1024);      // publish pointcloud message
 	ros::Publisher slamTrackPub = nh.advertise<gpsCalibration::IMTrack>("/slam_track",2);
@@ -251,15 +266,14 @@ int main(int argc, char **argv)
     for(times = 0; times < 2; times ++)
     {
         // init publocation
-        pubLocation.bagNum = 0;
-        pubLocation.row = 0;
+        pubLocation.nBagIndex = 0;
+        pubLocation.nMsgIndex = 0;
         pubLocation.distance = 0;
         pubLocation.timestamp = 0;
         allLocation.push_back(pubLocation);
         
-        long messageIndex = 0;
-        bagIndex = 0;
-        totalDis = 0;
+        g_nBagIndex = 0;
+        g_dTotalDistane = 0;
         nMsgSendNum = 0;
         nMsgLostNum = 0;
 
@@ -269,36 +283,35 @@ int main(int argc, char **argv)
         pubControl.publish(controlMsg);
         rate.sleep();
 
-	    while(bagIndex < bagList.size())
+	    while(g_nBagIndex < bagList.size())
 	    {
             int end = 0;   // flag for end publish 
             char bagName[IMSDLEN];     // bag path
 
             //firstMessage = 1;  // init firstMessage
-            bagIndex = allLocation[allLocation.size()-1].bagNum;   // init bagIndex
+            g_nBagIndex = allLocation[allLocation.size()-1].nBagIndex;   // init g_nBagIndex
 
-            messageIndex = 0;
-            for(int i = 0;i< bagIndex;i++)
+            g_lPublishedMsgNum = 0;
+            for(int i = 0;i< g_nBagIndex;i++)
             {
-                messageIndex += messageNumber[i];
+                g_lPublishedMsgNum += messageNumber[i];
             }
-            messageIndex += pubLocation.row;    // init message index
+            g_lPublishedMsgNum += pubLocation.nMsgIndex;    // init message index
 
-            system("clear");            
-            cout<<"***********************publish message***********************"<<endl;
-            printf("published %ld message,%ld message left,maybe %.1lf minites to publish\n",messageIndex,totalMessage - messageIndex,(totalMessage - messageIndex) / IMRATE / 60.0);
-            while(bagIndex < bagList.size())
+            showMessagePublishInfo();
+
+            while(g_nBagIndex < bagList.size())
             {
-                sprintf(bagName,"%s",bagList[bagIndex].c_str());
+                sprintf(bagName,"%s",bagList[g_nBagIndex].c_str());
                 readBag.open(bagName,rosbag::bagmode::Read);           //open bag
                 tempTopics.push_back("velodyne_points");
                 rosbag::View view(readBag,rosbag::TopicQuery(tempTopics));
  
-                rowNum = 0;          // init messag index
+                g_nMsgIndex = 0;          // init messag index
                 //publish message
                 foreach(rosbag::MessageInstance const m,view)
                 {
-                    rowNum++;
+                    g_nMsgIndex++;
                     pointcloud2 = m.instantiate<sensor_msgs::PointCloud2>();
                     
                     if(timetodie == 1)   // get ctrl-c signal,return;
@@ -308,22 +321,20 @@ int main(int argc, char **argv)
                         return 1; 
                     }
                  
-                    if(pubLocation.row < rowNum || pubLocation.bagNum < bagIndex)    // find location to publish messge
+                    if(pubLocation.nMsgIndex < g_nMsgIndex || pubLocation.nBagIndex < g_nBagIndex)    // find location to publish messge
                     {
                         pubLaserCloud.publish(pointcloud2);        //publish message
-                        messageIndex ++;
+                        g_lPublishedMsgNum ++;
                         nMsgSendNum++;
-                        if(messageIndex % 50 == 0)
+                        if(g_lPublishedMsgNum % 50 == 0)
                         {
-                            system("clear");
-                            cout<<"***********************publish message***********************"<<endl;
-                            printf("published %ld message,%ld message left,maybe %.1lf minites to publish\n",messageIndex,totalMessage - messageIndex,(totalMessage - messageIndex) / IMRATE / 60.0);
+                            showMessagePublishInfo();
                         }
                         rate.sleep();                // publish rate
                         ros::spinOnce();       //calculate track distance
-                        if(totalDis > totalDistance[times])    // stop publish message
+                        if(g_dTotalDistane > g_dSlamDistance[times])    // stop publish message
                         {
-                            totalDis = 0;
+                            g_dTotalDistane = 0;
                             showMessageHandleResult();
                             nMsgSendNum = 0;
                             nMsgLostNum = 0;
@@ -339,9 +350,8 @@ int main(int argc, char **argv)
                     rate.sleep();
                     break;
                 }
-                ++bagIndex;
+                ++g_nBagIndex;
             }
-            slamTrack.track_flag = times;
             slamTrackVector.push(slamTrack);
             slamTrack.track.clear();
             preOdometry = NULL;
@@ -353,16 +363,16 @@ int main(int argc, char **argv)
         }       
 
         //if rest distance is too short,then add to previous file
-        if(allLocation.size() > 1 && totalDis < totalDistance[times] / IMREST)
+        if(allLocation.size() > 1 && g_dTotalDistane < g_dSlamDistance[times] / IMREST)
         {
             DISTANCE tmp = allLocation[allLocation.size()-2];      //publish location
             
-            messageIndex = 0;
-            for(int i = 0;i < tmp.bagNum;i++)
+            g_lPublishedMsgNum = 0;
+            for(int i = 0;i < tmp.nBagIndex;i++)
             {
-                messageIndex += messageNumber[i];
+                g_lPublishedMsgNum += messageNumber[i];
             }
-            messageIndex += tmp.row;
+            g_lPublishedMsgNum += tmp.nMsgIndex;
 
             while(!slamTrackVector.empty())
             {
@@ -372,19 +382,17 @@ int main(int argc, char **argv)
 
             pubControl.publish(controlMsg);
             rate.sleep();
-            system("clear");
-            cout<<"***********************publish message***********************"<<endl;
-            printf("published %ld message,%ld message left,maybe %.1lf minites to publish\n",messageIndex,totalMessage - messageIndex,(totalMessage - messageIndex) / IMRATE / 60.0);
+            showMessagePublishInfo();
         
-            for(bagIndex = tmp.bagNum ; bagIndex < bagList.size();bagIndex++)       //publish message
+            for(g_nBagIndex = tmp.nBagIndex ; g_nBagIndex < bagList.size();g_nBagIndex++)       //publish message
             {
                 char bagName[IMSDLEN];
-                sprintf(bagName,"%s",bagList[bagIndex].c_str());
+                sprintf(bagName,"%s",bagList[g_nBagIndex].c_str());
                 readBag.open(bagName,rosbag::bagmode::Read);           //open bag
                 tempTopics.push_back("velodyne_points");
                 rosbag::View view(readBag,rosbag::TopicQuery(tempTopics));
 
-                rowNum = 0;          // message index
+                g_nMsgIndex = 0;          // message index
                 //publish message
                 foreach(rosbag::MessageInstance const m,view)
                 {
@@ -394,19 +402,17 @@ int main(int argc, char **argv)
                         //cout << "got ctrl-c signal." << endl;
                         return 1;
                     }
-                    rowNum++;
+                    g_nMsgIndex++;
                     pointcloud2 = m.instantiate<sensor_msgs::PointCloud2>();
 
-                    if(tmp.row < rowNum || tmp.bagNum < bagIndex)    // find location to publish messge
+                    if(tmp.nMsgIndex < g_nMsgIndex || tmp.nBagIndex < g_nBagIndex)    // find location to publish messge
                     {
                         pubLaserCloud.publish(pointcloud2);    // publish message
-                        messageIndex++;
+                        g_lPublishedMsgNum++;
                         nMsgSendNum++;
-                        if(messageIndex % 50 == 0)
+                        if(g_lPublishedMsgNum % 50 == 0)
                         {
-                            system("clear");
-                            cout<<"***********************publish message***********************"<<endl;
-                            printf("published %ld message,%ld message left,maybe %.1lf minites to publish\n",messageIndex,totalMessage - messageIndex,(totalMessage - messageIndex) / IMRATE / 60.0);
+                            showMessagePublishInfo();
                         }
                         rate.sleep();
                         ros::spinOnce();

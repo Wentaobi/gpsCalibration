@@ -51,7 +51,6 @@ const float scanPeriod = 0.1;
 
 const int skipFrameNum = 1;
 bool systemInited = false;
-//int systemInited = 0;
 
 //define time for receiving different CloudPoint timestamp
 double timeCornerPointsSharp = 0;
@@ -78,9 +77,9 @@ pcl::PointCloud<PointType>::Ptr surfPointsFlat(new pcl::PointCloud<PointType>())
 //define pointer (not so obvious surf points,the value of cloudCurvature was smaller)
 pcl::PointCloud<PointType>::Ptr surfPointsLessFlat(new pcl::PointCloud<PointType>());
 //define pointer (last of cloudPoint ,edge points)
-pcl::PointCloud<PointType>::Ptr laserCloudCornerLast(new pcl::PointCloud<PointType>());
+pcl::PointCloud<PointType>::Ptr laserCloudCornerLast;//(new pcl::PointCloud<PointType>());
 //define pointer (last of cloudPoint ,surf points)
-pcl::PointCloud<PointType>::Ptr laserCloudSurfLast(new pcl::PointCloud<PointType>());
+pcl::PointCloud<PointType>::Ptr laserCloudSurfLast;//(new pcl::PointCloud<PointType>());
 //define pointer 
 //stores the original coordinates (not transformationed to start time point) of feature point in current cloud
 pcl::PointCloud<PointType>::Ptr laserCloudOri(new pcl::PointCloud<PointType>());
@@ -409,7 +408,6 @@ void imuTransHandler(const sensor_msgs::PointCloud2ConstPtr& imuTrans2)
   newImuTrans = true;
 }
 
-
 void controlHandler(const gpsCalibration::IMControl::ConstPtr& msg)
 {
     ROS_INFO("%s","get control message");
@@ -519,10 +517,20 @@ int main(int argc, char** argv)
       //publish cloud of edge less and cloud of surf less by first time
       
       if (!systemInited) {
+	    laserCloudCornerLastNum = 0;
+	    laserCloudSurfLastNum = 0;
+	    //delete laserCloudCornerLast;
+	    //laserCloudCornerLast = new pcl::PointCloud<PointType>();
+	    //laserCloudCornerLast -> clear();
+	    laserCloudCornerLast = pcl::PointCloud<PointType>::Ptr (new pcl::PointCloud<PointType>);
         pcl::PointCloud<PointType>::Ptr laserCloudTemp = cornerPointsLessSharp;
         cornerPointsLessSharp = laserCloudCornerLast;
         laserCloudCornerLast = laserCloudTemp;
 
+	    //delete laserCloudSurfLast;
+	    //laserCloudSurfLast= new pcl::PointCloud<PointType>();
+	    //laserCloudSurfLast -> clear();
+	    laserCloudSurfLast = pcl::PointCloud<PointType>::Ptr (new pcl::PointCloud<PointType>);
         laserCloudTemp = surfPointsLessFlat;
         surfPointsLessFlat = laserCloudSurfLast;
         laserCloudSurfLast = laserCloudTemp;
@@ -542,6 +550,11 @@ int main(int argc, char** argv)
         laserCloudSurfLast2.header.frame_id = "/camera";
         pubLaserCloudSurfLast.publish(laserCloudSurfLast2);
 
+        for (int i = 0; i < 6; i++)
+        {
+	        transformation[i] = 0;
+	        transformationSum[i] = 0;
+        }
         transformationSum[0] += imuPitchStart;
         transformationSum[2] += imuRollStart;
 
@@ -553,6 +566,8 @@ int main(int argc, char** argv)
       transformation[3] -= imuVeloFromStartX * scanPeriod;
       transformation[4] -= imuVeloFromStartY * scanPeriod;
       transformation[5] -= imuVeloFromStartZ * scanPeriod;
+	//cout << "laserCloudCornerLastNum:" << laserCloudCornerLastNum << endl;
+	//cout << "laserCloudSurfLastNum:" << laserCloudSurfLastNum << endl;
       //if the feature points count is enough, do odometry
       if (laserCloudCornerLastNum > 10 && laserCloudSurfLastNum > 100) {
         /*
