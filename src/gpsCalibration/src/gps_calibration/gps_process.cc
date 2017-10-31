@@ -234,6 +234,7 @@ void GPSPro::getGPGGAFormat (char* buf, ifstream &ifile, vector<double> slamTrac
     double startTime = slamTrackTime[0]; 
     double endTime = slamTrackTime[slamTrackTime.size()-1];
 
+
     do {
         int column = 0;
         double latitude = 90,longitude = 180;
@@ -243,11 +244,15 @@ void GPSPro::getGPGGAFormat (char* buf, ifstream &ifile, vector<double> slamTrac
         {
             column ++ ;
 
-			if (8 == column && (0 == strcmp ("0", splite) || 0 == strcmp ("3", splite)))
+			if (5 == column && 0 != strcmp ("N", splite) && 0 != strcmp ("S", splite))
 			{
 				break;
 			}
-            
+			if (7 == column && 0 != strcmp ("W", splite) && 0 != strcmp("E", splite))
+			{
+				break;
+			}
+
             switch(column)
             {
                 case 1:                              // the first column is timestamp
@@ -288,7 +293,7 @@ void GPSPro::getGPGGAFormat (char* buf, ifstream &ifile, vector<double> slamTrac
         }
         splite = NULL;
 
-        if((long)timestamp >= (long)(startTime - 1) && (long)timestamp <= (long)(endTime + 1))
+        if((long)timestamp >= (long)(startTime - 1) && (long)timestamp <= (long)(endTime + 1) && 90 != latitude && 180 != longitude)
         {
             WGSBL.push_back(pair<double,double>(latitude,longitude));
             GPSTime.push_back(timestamp);
