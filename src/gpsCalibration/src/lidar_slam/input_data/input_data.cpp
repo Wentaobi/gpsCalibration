@@ -234,7 +234,7 @@ int main(int argc, char **argv)
     char *bagListPath = argv[1];
     if(atof(argv[2]) > atof(argv[3]) && atof(argv[3]) > atof(argv[4]) && atof(argv[4]) > 0)
     {
-        g_dSlamDistance[0] = 30;//atof(argv[2]);
+        g_dSlamDistance[0] = atof(argv[2]);
         g_dOverlapDistance[0] = 0;
         g_dSlamDistance[1] = atof(argv[3]);
         g_dOverlapDistance[1] = atof(argv[4]);

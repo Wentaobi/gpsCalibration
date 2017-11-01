@@ -11,9 +11,11 @@
        original GPS data with type GPRMC
 
     3. result_control:
-       output KML files or publish messages to other nodes
-       1- output KML files
-       2- publish messages to other nodes
+       output map files or publish messages to other nodes
+       1- output Google Earth KML files(.kml or .KML must be the suffix)
+       2- output Baidu map .bmap files(.bmap is suggested to be used as suffix)
+       3- output Gaode map .amap files(.amap is suggested to be used as suffix)
+       4- publish messages to other nodes
 
     Output filenames, if needed:
     3. gps_original_filename:
@@ -24,9 +26,9 @@
 !
 bag_input_filename="./data/bag_list.txt"
 gps_input_filename="./data/original_gps_data.txt"
-result_control=3
-gps_original_filename="./data/original_gps_file.json"
-gps_improved_filename="./data/calibration_gps_file.json"
+result_control=1
+gps_original_filename="./data/original_gps_file.kml"
+gps_improved_filename="./data/calibration_gps_file.kml"
 
 <<!
     Project parameters:
