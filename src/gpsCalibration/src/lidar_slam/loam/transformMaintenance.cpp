@@ -261,6 +261,20 @@ void transformAssociateToMap()
 
 void laserOdometryHandler(const nav_msgs::Odometry::ConstPtr& laserOdometry)
 {
+if ((abs(laserOdometry->pose.pose.position.x) < 0.000001) && (abs(laserOdometry->pose.pose.position.y) < 0.000001) && (abs(laserOdometry->pose.pose.position.z) < 0.000001))
+{
+        predata.timestamp = 0;
+for (int i =0; i < 6; i++)
+{
+transformSum[i] = 0;
+transformIncre[i] = 0;
+transformMapped[i] = 0;
+transformBefMapped[i] = 0;
+transformAftMapped[i] = 0;
+}
+}
+
+
   double roll, pitch, yaw;
   geometry_msgs::Quaternion geoQuat = laserOdometry->pose.pose.orientation;
   tf::Matrix3x3(tf::Quaternion(geoQuat.z, -geoQuat.x, -geoQuat.y, geoQuat.w)).getRPY(roll, pitch, yaw);
@@ -288,7 +302,6 @@ void laserOdometryHandler(const nav_msgs::Odometry::ConstPtr& laserOdometry)
   laserOdometry2.pose.pose.position.z = transformMapped[5];
   pubLaserOdometry2Pointer->publish(laserOdometry2);
    
-  
   //SaveTrailTotxt();
   SaveTrailWithTimeTotxt();
 
