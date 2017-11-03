@@ -59,13 +59,10 @@ int trackCalibration::dataInitial(vector<COORDXYZT> &SLAMTrackTmp, vector<COORDX
 
     //ENU track coord
     ENUCoord.setOnes(ENULineNo, 4);
+    ENUX0= ENUTrackTmp[0].x;
+    ENUY0= ENUTrackTmp[0].y;
     for(int i= 0; i< ENULineNo; i++) 
     {    
-        if(0==i)
-        {
-            ENUX0= ENUTrackTmp[i].x;
-            ENUY0= ENUTrackTmp[i].y;
-        }
         ENUCoord(i, 0)= ENUTrackTmp[i].x- ENUX0;
         ENUCoord(i, 1)= ENUTrackTmp[i].y- ENUY0;
     }   
@@ -170,7 +167,7 @@ int trackCalibration::icp(MatrixXd *outT,MatrixXd *outD)
         //check error
         double meanError = 0.0;
         
-        for(int j=0;j<tempDistance.rows();j++)
+        for(int j=0; j < tempDistance.rows(); j++)
         {
             meanError += tempDistance(j,0);
         }
@@ -255,24 +252,14 @@ int trackCalibration::bestFitTransform(MatrixXd A,MatrixXd B,MatrixXd *outputT)
     
     for(int i= 0; i< ALength; i++)
     {
-        for(int j= 0; j< 3; j++)
-        {
-            if(j== 0)
-            {
-                sumA_X+= A(i,j);
-                sumB_X+= B(i,j);
-            }
-            else if(j== 1)
-            {
-                sumA_Y+= A(i,j);
-                sumB_Y+= B(i,j);
-            }
-            else
-            {
-                sumA_Z+= A(i,j);
-                sumB_Z+= B(i,j);
-            }   
-        }
+        sumA_X+= A(i,0);
+        sumB_X+= B(i,0);
+
+        sumA_Y+= A(i,1);
+        sumB_Y+= B(i,1);
+
+        sumA_Z+= A(i,2);
+        sumB_Z+= B(i,2);
     }
     
     for(int i= 0; i< ALength; i++)
@@ -428,47 +415,28 @@ int trackCalibration::BFTWithWeight(MatrixXd A,MatrixXd B,MatrixXd *outputT)
     
     for(int i= 0; i< ALength; i++)
     {
-        for(int j= 0; j< 3; j++)
-        {
-            if(j== 0)
-            {
-                A1(i, j)= A(i, j)* weightCoord(i);
-                B1(i, j)= B(i, j)* weightCoord(i);
-            }
-            else if(j==1)
-            {
-                A1(i, j)= A(i, j)* weightCoord(i);
-                B1(i, j)= B(i, j)* weightCoord(i);
-            }
-            else
-            {
-                A1(i, j)= A(i, j)* weightCoord(i);
-                B1(i, j)= B(i, j)* weightCoord(i);
-            }
-        }
+        A1(i, 0) = A(i, 0)* weightCoord(i);
+        B1(i, 0) = B(i, 0)* weightCoord(i);
+
+        A1(i, 1) = A(i, 1)* weightCoord(i);
+        B1(i, 1) = B(i, 1)* weightCoord(i);
+
+        A1(i, 2) = A(i, 2)* weightCoord(i);
+        B1(i, 2) = B(i, 2)* weightCoord(i);
     }
    
     for(int i= 0; i< ALength; i++)
     {
-        for(int j= 0; j< 3; j++)
-        {
-            if(j==0)
-            {
-                sumA_X+= A1(i, j);
-                sumB_X+= B1(i, j);
-            }
-            else if(j== 1)
-            {
-                sumA_Y+= A1(i, j);
-                sumB_Y+= B1(i, j);
-            }
-            else
-            {
-                sumA_Z+= A1(i, j);
-                sumB_Z+= B1(i, j);
-            }  
-        }
-        sumW+= weightCoord(i);
+        sumA_X += A1(i, 0);
+        sumB_X += B1(i, 0);
+
+        sumA_Y += A1(i, 1);
+        sumB_Y += B1(i, 1);
+
+        sumA_Z += A1(i, 2);
+        sumB_Z += B1(i, 2);
+
+        sumW += weightCoord(i);
     }
    
     for(int i= 0; i< ALength; i++)
@@ -480,13 +448,13 @@ int trackCalibration::BFTWithWeight(MatrixXd A,MatrixXd B,MatrixXd *outputT)
         }
     }
     
-    sumA_X= sumA_X/ sumW;
-    sumA_Y= sumA_Y/ sumW;
-    sumA_Z= sumA_Z/ sumW;
+    sumA_X = sumA_X / sumW;
+    sumA_Y = sumA_Y / sumW;
+    sumA_Z = sumA_Z / sumW;
     
-    sumB_X= sumB_X/ sumW;
-    sumB_Y= sumB_Y/ sumW;
-    sumB_Z= sumB_Z/ sumW;
+    sumB_X = sumB_X / sumW;
+    sumB_Y = sumB_Y / sumW;
+    sumB_Z = sumB_Z / sumW;
     
     for(int i= 0; i< 3; i++)
     {
@@ -524,24 +492,14 @@ int trackCalibration::BFTWithWeight(MatrixXd A,MatrixXd B,MatrixXd *outputT)
     
     for(int i= 0; i< ALength; i++)
     {
-        for(int j= 0; j< 3; j++)
-        {
-            if(j==0)
-            {
-                 AA(i, j)= AA(i, j)* weightCoord(i);
-                 BB(i, j)= BB(i, j)* weightCoord(i);
-            }
-            else if(j==1)
-            {
-                 AA(i, j)= AA(i, j)* weightCoord(i);
-                 BB(i, j)= BB(i, j)* weightCoord(i);
-            }
-            else
-            {    
-                 AA(i, j)= AA(i, j)* weightCoord(i);
-		         BB(i, j)= BB(i, j)* weightCoord(i);
-            }
-        }
+        AA(i, 0)= AA(i, 0)* weightCoord(i);
+        BB(i, 0)= BB(i, 0)* weightCoord(i);
+
+        AA(i, 1)= AA(i, 1)* weightCoord(i);
+        BB(i, 1)= BB(i, 1)* weightCoord(i);
+
+        AA(i, 2)= AA(i, 2)* weightCoord(i);
+        BB(i, 2)= BB(i, 2)* weightCoord(i);
     }
    
     //rotation matrix
@@ -599,16 +557,9 @@ int trackCalibration::nearestNeighbor(MatrixXd inputSrc, MatrixXd inputDst, Matr
     //the matrix of inputSrc's rows;
     int srcLength= inputSrc.rows();
 
-    //count 
-    int jNum= 0;
-    
     //N*1, index:0~N
     MatrixXd tempIndices;
     tempIndices.setOnes(srcLength, 1);
-    
-    //N*N, euclidean distance 
-    MatrixXd tempDistance;
-    tempDistance.setOnes(srcLength, srcLength);
     
     //N*1, euclidean distances of the nearest neighbor
     MatrixXd tempDst;
@@ -623,21 +574,12 @@ int trackCalibration::nearestNeighbor(MatrixXd inputSrc, MatrixXd inputDst, Matr
 
     double disx= 0.0;
     double disy= 0.0;
-
-    for(int i= 0; i< srcLength; i++)
-    {   
-        for(int j= 0; j< srcLength; j++)
-        {
-            disx= inputSrc(i, 0)- inputDst(j, 0);
-            disy= inputSrc(i, 1)- inputDst(j, 1);
-            tempDistance(i, j)= sqrt(disx* disx+ disy* disy);
-        }
-    }
     
     for(int i= 0; i< srcLength; i++)
     {
-        tempDst(i,0)= tempDistance(i, jNum);
-        jNum++;
+        disx= inputSrc(i, 0)- inputDst(i, 0);
+        disy= inputSrc(i, 1)- inputDst(i, 1);
+        tempDst(i,0)= sqrt(disx* disx+ disy* disy);
     }
 
     *outputDistances= tempDst;  

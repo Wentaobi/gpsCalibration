@@ -60,7 +60,8 @@ int GPSPro::interPolate(vector<pair<double,double> > LocalXY,vector<double> GPST
 {
     vector<double> dataX,dataY;
 
-    for(int index = 0; index < LocalXY.size(); index ++)
+    int nSize = LocalXY.size();
+    for(int index = 0; index < nSize; index ++)
     {
         dataX.push_back(LocalXY[index].first);
         dataY.push_back(LocalXY[index].second);
@@ -478,7 +479,8 @@ vector<COORDXYZT> GPSPro::GPSToENU(vector<COORDXYZT> slamTrack)
     vector<pair<double,double> > WGSBL,LocalXY,interLocalXY;
     vector<double> GPSTime,slamTrackTime;
 
-    for(int index = 0; index < slamTrack.size(); index ++)
+    int nSlamTrackSize = slamTrack.size();
+    for(int index = 0; index < nSlamTrackSize; index ++)
     {
         slamTrackTime.push_back(slamTrack[index].t);
     }
@@ -505,7 +507,8 @@ vector<COORDXYZT> GPSPro::GPSToENU(vector<COORDXYZT> slamTrack)
     interPolate(LocalXY,GPSTime,slamTrackTime,interLocalXY);
    
     vector<COORDXYZT> localCoor;
-    for(int index = 0; index < interLocalXY.size(); index ++)
+    int nInterLocalXYSize = interLocalXY.size();
+    for(int index = 0; index < nInterLocalXYSize; index ++)
     {
         COORDXYZT tmp;
         tmp.x = interLocalXY[index].first;
@@ -849,7 +852,7 @@ int GPSPro::createKML(string KMLFileName,vector<pair<double,double> > WGSBL,vect
 int GPSPro::UTMTransform(vector<pair<double,double> > WGSBL,vector<pair<double,double> > &LocalXY)
 {
   
-    if(0 == WGSBL.size())
+    if (WGSBL.empty())
     {
         return 1;
     }
@@ -858,7 +861,8 @@ int GPSPro::UTMTransform(vector<pair<double,double> > WGSBL,vector<pair<double,d
     int bandNum = 0;
     double meridian = 0;
 
-    for(int index = 0;index < WGSBL.size(); index ++)
+    int nSize = WGSBL.size();
+    for(int index = 0;index < nSize; index ++)
     {
         /* calculate the central meridian */
         if(type == IMTHREEBANDS)
