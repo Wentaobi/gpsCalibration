@@ -31,7 +31,7 @@ Eigen is a C++ template library for linear algebra: matrices, vectors, numerical
 ```
 $ git clone https://github.com/iMorpheusAI/gpsCalibration.git
 ```
-- Download by browser - [click to download](https://github.com/iMorpheusAI/gpsCalibration/archive/master.zip)<br/>
+- Download by browser - [click to download-gpsCalibration.zip-2.1MB](https://github.com/iMorpheusAI/gpsCalibration/archive/master.zip)<br/>
   After download, you can type command to decompress:
   ```
   $ unzip gpsCalibration-master.zip -d gpsCalibration
@@ -119,7 +119,7 @@ $ ./run.sh
 ### 3. Example
   We show calibrated results of large size demo data. 
 #### 3.1 demo results
-##### [Results Download](http://www.imorpheus.ai/download/dataForDemo/largeSizeDemoResult)
+##### [Results Download-large_size_demo_result.tar.gz-133KB](http://www.imorpheus.ai/download/dataForDemo/largeSizeDemoResult)
 Download compressed demo results and type commands to decompress: 
 ```
 $ tar -zvxf large_size_demo_result.tar.gz
