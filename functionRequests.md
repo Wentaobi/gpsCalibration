@@ -24,6 +24,8 @@ function requests document
 
         Data flow and calculation nodes in alpha version are controlled by python script, which will be updated to a package in ROS.
 
+    2.4 Support GAODE map
+        
     2.4 Preprocess of point cloud data
 
     2.5 Calibration of lidar, IMU and GPS
