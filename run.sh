@@ -25,7 +25,7 @@
        imporved accurate GPS track type with KML format
 !
 bag_input_filename="./data/bag_list.txt"
-gps_input_filename="./data/original_gps_data.txt"
+gps_input_filename="./data/original_data.txt"
 result_control=1
 gps_original_filename="./data/original_gps_file.kml"
 gps_improved_filename="./data/calibration_gps_file.kml"
@@ -60,9 +60,7 @@ overlap_distance=100
 ctm="UTM"
 gdt="3"
 
-bd="./data/bd.json"
-
 #command
 roslaunch gpsCalibration gpsCalibration.launch bag_input_filename:=${bag_input_filename} total_long_distance:=${total_long_distance} total_short_distance:=${total_short_distance} \
 gps_input_filename:=${gps_input_filename} ctm:=${ctm} gdt:=${gdt} result_control:=${result_control} overlap_distance:=${overlap_distance} gps_original_filename:=${gps_original_filename} \
-gps_improved_filename:=${gps_improved_filename} bd:=${bd}
+gps_improved_filename:=${gps_improved_filename} 

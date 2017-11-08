@@ -10,7 +10,6 @@
 <arg name="gps_original_filename"/>
 <arg name="gps_improved_filename"/>
 
-<arg name="bd"/>
 
 <node pkg="gpsCalibration" type="scanRegistration" name="scanRegistration" output="screen"/>
 <node pkg="gpsCalibration" type="laserOdometry" name="laserOdometry" output="screen"/>
@@ -24,6 +23,6 @@ required="true" args="$(arg bag_input_filename) $(arg total_long_distance) $(arg
 args="$(arg gps_input_filename) $(arg ctm) $(arg gdt)" required="true"/>
 
 <node pkg="gpsCalibration" type="short_distance_track_process_node" name="short_distance_track_process_node" output="screen" 
-args="$(arg ctm) $(arg gdt) $(arg result_control) $(arg gps_original_filename) $(arg gps_improved_filename) $(arg bd)" required="true"/>
+args="$(arg ctm) $(arg gdt) $(arg result_control) $(arg gps_original_filename) $(arg gps_improved_filename)" required="true"/>
 
 </launch>

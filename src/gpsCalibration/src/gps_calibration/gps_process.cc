@@ -150,9 +150,8 @@ int GPSPro::getGPS(string originalGPSPath,vector<double> slamTrackTime,vector<pa
 	}
 	else 
 	{
-		cout << "The current version does not support the current GPS format" << endl;
+		cout << "[WARNING] The current version does not support the current GPS format" << endl;
 	}
-
 
 
     ifile.close();
