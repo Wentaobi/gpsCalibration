@@ -54,7 +54,10 @@ using std::atan2;
 
 //time duration per scan
 const double scanPeriod = 0.1;
-
+//rfans
+const double rfansScanPeriod = 0.2;
+int imuMesg=0;
+double initYaw=0;
 const int systemDelay = 20;
 int systemInitCount = 0;
 bool systemInited = false;
@@ -87,7 +90,7 @@ float imuShiftXCur = 0, imuShiftYCur = 0, imuShiftZCur = 0;
 float imuShiftFromStartXCur = 0, imuShiftFromStartYCur = 0, imuShiftFromStartZCur = 0;
 //updated by VeloToStartIMU()
 float imuVeloFromStartXCur = 0, imuVeloFromStartYCur = 0, imuVeloFromStartZCur = 0;
-
+//storage 200 imu messages in array
 double imuTime[imuQueLength] = {0};
 float imuRoll[imuQueLength] = {0};
 float imuPitch[imuQueLength] = {0};
@@ -191,30 +194,38 @@ void AccumulateIMUShift()
   float accX = imuAccX[imuPointerLast];
   float accY = imuAccY[imuPointerLast];
   float accZ = imuAccZ[imuPointerLast];
-
+  // transform imu local_coordinate acceleration into lidar_reference_coordinate
+  //across z-axis to project
   float x1 = cos(roll) * accX - sin(roll) * accY;
   float y1 = sin(roll) * accX + cos(roll) * accY;
   float z1 = accZ;
-
+  /*
+  //across x-axis to project
   float x2 = x1;
   float y2 = cos(pitch) * y1 - sin(pitch) * z1;
   float z2 = sin(pitch) * y1 + cos(pitch) * z1;
-
+  //across y-axis to project
   accX = cos(yaw) * x2 + sin(yaw) * z2;
   accY = y2;
   accZ = -sin(yaw) * x2 + cos(yaw) * z2;
+  */
+  //we think vehicle in urben accross axis-z
+  accX = x1;
+  accY = y1;
+  accZ = z1;
 
   int imuPointerBack = (imuPointerLast + imuQueLength - 1) % imuQueLength;
   double timeDiff = imuTime[imuPointerLast] - imuTime[imuPointerBack];
-  if (timeDiff < scanPeriod) {
-
+  if (timeDiff < rfansScanPeriod) {
+  //in a interval time ,we think is Uniform rectilinear motion（urm）
+  //here acculate shift
     imuShiftX[imuPointerLast] = imuShiftX[imuPointerBack] + imuVeloX[imuPointerBack] * timeDiff 
                               + accX * timeDiff * timeDiff / 2;
     imuShiftY[imuPointerLast] = imuShiftY[imuPointerBack] + imuVeloY[imuPointerBack] * timeDiff 
                               + accY * timeDiff * timeDiff / 2;
     imuShiftZ[imuPointerLast] = imuShiftZ[imuPointerBack] + imuVeloZ[imuPointerBack] * timeDiff 
                               + accZ * timeDiff * timeDiff / 2;
-
+  //here acculate speed
     imuVeloX[imuPointerLast] = imuVeloX[imuPointerBack] + accX * timeDiff;
     imuVeloY[imuPointerLast] = imuVeloY[imuPointerBack] + accY * timeDiff;
     imuVeloZ[imuPointerLast] = imuVeloZ[imuPointerBack] + accZ * timeDiff;
@@ -358,43 +369,50 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudMsg)
         }
         imuPointerFront = (imuPointerFront + 1) % imuQueLength;
       }
-
+       //watch out if timeScanCur largest than imuTime[imuPointerFront]
+       //timestamp sync
       if (timeScanCur + pointTime > imuTime[imuPointerFront]) {
-        imuRollCur = imuRoll[imuPointerFront];
-        imuPitchCur = imuPitch[imuPointerFront];
-        imuYawCur = imuYaw[imuPointerFront];
+        if((timeScanCur + pointTime) - imuTime[imuPointerFront] < rfansScanPeriod)
+        {
+            imuRollCur = imuRoll[imuPointerFront];
+            imuPitchCur = imuPitch[imuPointerFront];
+            imuYawCur = imuYaw[imuPointerFront];
 
-        imuVeloXCur = imuVeloX[imuPointerFront];
-        imuVeloYCur = imuVeloY[imuPointerFront];
-        imuVeloZCur = imuVeloZ[imuPointerFront];
+            imuVeloXCur = imuVeloX[imuPointerFront];
+            imuVeloYCur = imuVeloY[imuPointerFront];
+            imuVeloZCur = imuVeloZ[imuPointerFront];
 
-        imuShiftXCur = imuShiftX[imuPointerFront];
-        imuShiftYCur = imuShiftY[imuPointerFront];
-        imuShiftZCur = imuShiftZ[imuPointerFront];
+            imuShiftXCur = imuShiftX[imuPointerFront];
+            imuShiftYCur = imuShiftY[imuPointerFront];
+            imuShiftZCur = imuShiftZ[imuPointerFront];
+        }
       } else {
-        int imuPointerBack = (imuPointerFront + imuQueLength - 1) % imuQueLength;
-        float ratioFront = (timeScanCur + pointTime - imuTime[imuPointerBack]) 
+        if(imuTime[imuPointerFront]-timeScanCur - pointTime < rfansScanPeriod)
+        {
+            int imuPointerBack = (imuPointerFront + imuQueLength - 1) % imuQueLength;
+            float ratioFront = (timeScanCur + pointTime - imuTime[imuPointerBack]) 
                          / (imuTime[imuPointerFront] - imuTime[imuPointerBack]);
-        float ratioBack = (imuTime[imuPointerFront] - timeScanCur - pointTime) 
+            float ratioBack = (imuTime[imuPointerFront] - timeScanCur - pointTime) 
                         / (imuTime[imuPointerFront] - imuTime[imuPointerBack]);
 
-        imuRollCur = imuRoll[imuPointerFront] * ratioFront + imuRoll[imuPointerBack] * ratioBack;
-        imuPitchCur = imuPitch[imuPointerFront] * ratioFront + imuPitch[imuPointerBack] * ratioBack;
-        if (imuYaw[imuPointerFront] - imuYaw[imuPointerBack] > M_PI) {
-          imuYawCur = imuYaw[imuPointerFront] * ratioFront + (imuYaw[imuPointerBack] + 2 * M_PI) * ratioBack;
-        } else if (imuYaw[imuPointerFront] - imuYaw[imuPointerBack] < -M_PI) {
-          imuYawCur = imuYaw[imuPointerFront] * ratioFront + (imuYaw[imuPointerBack] - 2 * M_PI) * ratioBack;
-        } else {
-          imuYawCur = imuYaw[imuPointerFront] * ratioFront + imuYaw[imuPointerBack] * ratioBack;
+            imuRollCur = imuRoll[imuPointerFront] * ratioFront + imuRoll[imuPointerBack] * ratioBack;
+            imuPitchCur = imuPitch[imuPointerFront] * ratioFront + imuPitch[imuPointerBack] * ratioBack;
+            if (imuYaw[imuPointerFront] - imuYaw[imuPointerBack] > M_PI) {
+                imuYawCur = imuYaw[imuPointerFront] * ratioFront + (imuYaw[imuPointerBack] + 2 * M_PI) * ratioBack;
+            } else if (imuYaw[imuPointerFront] - imuYaw[imuPointerBack] < -M_PI) {
+                imuYawCur = imuYaw[imuPointerFront] * ratioFront + (imuYaw[imuPointerBack] - 2 * M_PI) * ratioBack;
+            } else {
+                imuYawCur = imuYaw[imuPointerFront] * ratioFront + imuYaw[imuPointerBack] * ratioBack;
+            }
+
+            imuVeloXCur = imuVeloX[imuPointerFront] * ratioFront + imuVeloX[imuPointerBack] * ratioBack;
+            imuVeloYCur = imuVeloY[imuPointerFront] * ratioFront + imuVeloY[imuPointerBack] * ratioBack;
+            imuVeloZCur = imuVeloZ[imuPointerFront] * ratioFront + imuVeloZ[imuPointerBack] * ratioBack;
+
+            imuShiftXCur = imuShiftX[imuPointerFront] * ratioFront + imuShiftX[imuPointerBack] * ratioBack;
+            imuShiftYCur = imuShiftY[imuPointerFront] * ratioFront + imuShiftY[imuPointerBack] * ratioBack;
+            imuShiftZCur = imuShiftZ[imuPointerFront] * ratioFront + imuShiftZ[imuPointerBack] * ratioBack;
         }
-
-        imuVeloXCur = imuVeloX[imuPointerFront] * ratioFront + imuVeloX[imuPointerBack] * ratioBack;
-        imuVeloYCur = imuVeloY[imuPointerFront] * ratioFront + imuVeloY[imuPointerBack] * ratioBack;
-        imuVeloZCur = imuVeloZ[imuPointerFront] * ratioFront + imuVeloZ[imuPointerBack] * ratioBack;
-
-        imuShiftXCur = imuShiftX[imuPointerFront] * ratioFront + imuShiftX[imuPointerBack] * ratioBack;
-        imuShiftYCur = imuShiftY[imuPointerFront] * ratioFront + imuShiftY[imuPointerBack] * ratioBack;
-        imuShiftZCur = imuShiftZ[imuPointerFront] * ratioFront + imuShiftZ[imuPointerBack] * ratioBack;
       }
       if (i == 0) {
         imuRollStart = imuRollCur;
@@ -736,24 +754,79 @@ void laserCloudHandler(const sensor_msgs::PointCloud2ConstPtr& laserCloudMsg)
 void imuHandler(const sensor_msgs::Imu::ConstPtr& imuIn)
 {
   double roll, pitch, yaw;
+  bool flag=false;
+  imuMesg++;
   tf::Quaternion orientation;
-  tf::quaternionMsgToTF(imuIn->orientation, orientation);
-  tf::Matrix3x3(orientation).getRPY(roll, pitch, yaw);
+  if(fabs(pow(imuIn->orientation.x,2)+pow(imuIn->orientation.y,2)+pow(imuIn->orientation.z,2)+pow(imuIn->orientation.w,2)-1)<0.1)
+  {
+      tf::quaternionMsgToTF(imuIn->orientation, orientation);
+      tf::Matrix3x3(orientation).getRPY(roll, pitch, yaw);
+      if(imuMesg==1){
+          initYaw=yaw;
+      }
+  }else{
+      return ;
+  }
 
-  float accX = imuIn->linear_acceleration.y - sin(roll) * cos(pitch) * 9.81;
-  float accY = imuIn->linear_acceleration.z - cos(roll) * cos(pitch) * 9.81;
-  float accZ = imuIn->linear_acceleration.x + sin(pitch) * 9.81;
-
+  float accY = imuIn->linear_acceleration.y - sin(roll-IMIMURESIDUAL) * cos(pitch) * 9.81;
+  float accZ = imuIn->linear_acceleration.z - cos(roll-IMIMURESIDUAL) * cos(pitch) * 9.81;
+  float accX = imuIn->linear_acceleration.x + sin(pitch) * 9.81;
+  //these codes are only used to test 2017_10_30_sencond
   imuPointerLast = (imuPointerLast + 1) % imuQueLength;
+  std::cout<<"accX: "<<accX<<" accY: "<<accY<<" accZ: "<<accZ<<std::endl;
+  int imuPointBack=(imuPointerLast+imuQueLength-1)%imuQueLength;
+  if(imuMesg!=1)
+  {
+         if( imuIn->angular_velocity.z>0)
+         {                 
+             if(imuYaw[imuPointBack]>yaw)
+             {
+             cout << "angualr volcity large to 0 but last yaw large than current yaw" << endl;
+                 flag=true;
+                 yaw=imuYaw[imuPointBack];
+             }
+         }
+         else if(imuIn->angular_velocity.z==0)
+         {
+             if(imuYaw[imuPointBack] != yaw)
+             {
+                 flag=true;
+             cout << "angular volicity equal to 0 but last yaw does not equal current yaw" << endl;
+                 yaw=imuYaw[imuPointBack];
+             }
+         }else if(imuIn->angular_velocity.z<0)
+         {
+             if(imuYaw[imuPointBack] < yaw)
+             {
+                 flag=true;
+             cout << "angular volicity less than 0 but current yaw larger than before" << endl;
+                 yaw=imuYaw[imuPointBack];
+             }
+         }
+  }
+  imuTime[imuPointerLast]=imuIn->header.stamp.toSec();
+  imuRoll[imuPointerLast]=roll;
+  imuPitch[imuPointerLast]=pitch;
+  if(imuMesg!=1){
+      if(flag)
+      {
+          imuYaw[imuPointerLast]=yaw;
+      }else{
+          imuYaw[imuPointerLast]=yaw-initYaw;
+      }
+  }else{
+      imuYaw[imuPointerLast]=0;
+  }
 
-  imuTime[imuPointerLast] = imuIn->header.stamp.toSec();
-  imuRoll[imuPointerLast] = roll;
-  imuPitch[imuPointerLast] = pitch;
-  imuYaw[imuPointerLast] = yaw;
-  imuAccX[imuPointerLast] = accX;
-  imuAccY[imuPointerLast] = accY;
-  imuAccZ[imuPointerLast] = accZ;
-
+  cout <<"current_yaw  : " << imuYaw[imuPointerLast]*180/3.1415 << endl;
+  if(fabs(accX)>2 || fabs(accY)>2)
+  {
+      return;
+  }else{
+      imuAccX[imuPointerLast]=accX;
+      imuAccY[imuPointerLast]=accY;
+      imuAccZ[imuPointerLast]=accZ;
+  }
   AccumulateIMUShift();
 }
 
