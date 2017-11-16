@@ -20,6 +20,7 @@
 #define IMDP 15
 #define IMTHREEBANDS 3
 #define IMSIXBANDS 6
+#define IMUANGULARNOISE 3
 
 #define LongAxis 6378245.0
 #define ShortAxis 6356863.0188

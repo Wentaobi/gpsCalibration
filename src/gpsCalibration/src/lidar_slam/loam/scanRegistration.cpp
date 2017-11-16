@@ -768,8 +768,8 @@ void imuHandler(const sensor_msgs::Imu::ConstPtr& imuIn)
       return ;
   }
 
-  float accY = imuIn->linear_acceleration.y - sin(roll-IMIMURESIDUAL) * cos(pitch) * 9.81;
-  float accZ = imuIn->linear_acceleration.z - cos(roll-IMIMURESIDUAL) * cos(pitch) * 9.81;
+  float accY = imuIn->linear_acceleration.y - sin(roll) * cos(pitch) * 9.81;
+  float accZ = imuIn->linear_acceleration.z - cos(roll) * cos(pitch) * 9.81;
   float accX = imuIn->linear_acceleration.x + sin(pitch) * 9.81;
   //these codes are only used to test 2017_10_30_sencond
   imuPointerLast = (imuPointerLast + 1) % imuQueLength;
@@ -777,30 +777,36 @@ void imuHandler(const sensor_msgs::Imu::ConstPtr& imuIn)
   int imuPointBack=(imuPointerLast+imuQueLength-1)%imuQueLength;
   if(imuMesg!=1)
   {
-         if( imuIn->angular_velocity.z>0)
+         if( imuIn->angular_velocity.z > IMUANGULARNOISE)
          {                 
              if(imuYaw[imuPointBack]>yaw)
              {
-             cout << "angualr volcity large to 0 but last yaw large than current yaw" << endl;
+                if(fabs(imuYaw[imuPointBack]) < PI)
+                {
                  flag=true;
+                 cout << "angualr volcity large to 0 but last yaw large than current yaw" << endl;
                  yaw=imuYaw[imuPointBack];
+                }
              }
          }
-         else if(imuIn->angular_velocity.z==0)
+         else if(fabs(imuIn->angular_velocity.z) < IMUANGULARNOISE)
          {
              if(imuYaw[imuPointBack] != yaw)
              {
                  flag=true;
-             cout << "angular volicity equal to 0 but last yaw does not equal current yaw" << endl;
+                 cout << "angular volicity equal to 0 but last yaw does not equal current yaw" << endl;
                  yaw=imuYaw[imuPointBack];
              }
-         }else if(imuIn->angular_velocity.z<0)
+         }else if( imuIn->angular_velocity.z < -1*IMUANGULARNOISE )
          {
              if(imuYaw[imuPointBack] < yaw)
              {
+                if(fabs(imuYaw[imuPointBack]) < PI)
+                {
                  flag=true;
-             cout << "angular volicity less than 0 but current yaw larger than before" << endl;
+                 cout << "angular volicity less than 0 but current yaw larger than before" << endl;
                  yaw=imuYaw[imuPointBack];
+                }
              }
          }
   }
