@@ -69,7 +69,7 @@ $ catkin_make
 $ tar -zvxf small_size_demo_data.tar.gz
 $ tar -zvxf large_size_demo_data.tar.gz 
 ```
-*After decomproession of small_size_demo_data.tar.gz, you will see:*
+*After decompression of small_size_demo_data.tar.gz, you will see:*
 ```
 $ miniDemo/
    ├── bag_0
