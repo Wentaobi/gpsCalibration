@@ -159,4 +159,4 @@ void GPSHandle(const gpsCalibration::IMMessagePtr& GPSWithWeight)
 ```
 
 ## Questions
-  You can ask any question [here](https://github.com/iMorpheusAI/gpsCalibration/issues) or send us [emails](product@imorpheus.ai).
+  You can ask any question [here](https://github.com/iMorpheusAI/gpsCalibration/issues) or send us emails(product@imorpheus.ai).
